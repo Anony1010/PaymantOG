@@ -128,7 +128,7 @@ a { color: inherit; text-decoration: none; }
 .header {
   position: sticky; top: 0; z-index: 100;
   background: transparent;
-  padding: 16px; display: flex; align-items: center; justify-content: space-between;
+  padding: 16px; width: 100%; display: flex; align-items: center; justify-content: space-between;
   min-height: 56px;
 }
 .header-left { display: flex; align-items: center; gap: 10px; }
@@ -555,10 +555,9 @@ a.btn-icon { text-decoration: none; }
   }
 }
 
-/* Safe area */
 @supports (padding: max(0px)) {
   .header {
-    padding-left: max(12px, env(safe-area-inset-left));
-    padding-right: max(12px, env(safe-area-inset-right));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
   }
 }
