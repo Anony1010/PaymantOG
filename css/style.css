@@ -322,7 +322,7 @@ a.btn-icon { text-decoration: none; }
   .history-wrap { padding: 20px 32px 40px; }
   .history-list { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .btn-hero { padding: 26px 24px; font-size: 22px; }
-  .header { padding: 14px 32px; }
+  .header { padding: 14px 32px; min-height: 56px; }
   .header-left { gap: 10px; }
   .brand { font-size: 24px; }
   .brand-sub { font-size: 11px; letter-spacing: 3px; }
@@ -483,20 +483,31 @@ a.btn-icon { text-decoration: none; }
   .header {
     max-width: 800px;
     margin: 0 auto;
-    padding: 14px 24px;
+    padding: 16px 32px;
+    min-height: 60px;
   }
   .header-left {
-    gap: 10px;
+    gap: 12px;
   }
   .header-right {
-    gap: 10px;
+    gap: 12px;
   }
   .brand {
-    font-size: 24px;
+    font-size: 26px;
+    letter-spacing: 1px;
   }
   .brand-sub {
     font-size: 11px;
     letter-spacing: 3px;
+    margin-top: 1px;
+  }
+  .btn-icon {
+    width: 42px;
+    height: 42px;
+  }
+  .btn-icon svg {
+    width: 20px;
+    height: 20px;
   }
   .history-wrap {
     max-width: 800px;
