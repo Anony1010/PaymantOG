@@ -328,7 +328,10 @@
     const settingsLogout = $('settings-logout');
     if (settingsLogout) settingsLogout.addEventListener('click', () => { window.location.href = 'index.html'; });
 
-    // Product form
+    const productForm = $('product-form');
+    if (productForm) {
+      productForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
         if (!database) { toast('Firebase yoxdur', 'error'); return; }
         const name = $('pf-name')?.value?.trim();
         if (!name) { toast('Məhsul adı daxil edin', 'error'); return; }
@@ -354,25 +357,10 @@
             await newRef.set(data);
             toast(`Məhsul "${name}" əlavə edildi`, 'success');
           }
-        try {
-          if (state.editingProductId) {
-            await database.ref(`products/${state.editingProductId}`).update(data);
-            const oldSnap = await database.ref(`products/${state.editingProductId}/price`).once('value');
-            const oldPrice = oldSnap.val();
-            if (oldPrice && parseFloat(oldPrice) !== data.price) {
-              await database.ref('priceHistory').push({ productId: state.editingProductId, productName: name, oldPrice: parseFloat(oldPrice), newPrice: data.price, changedBy: 'admin', changedAt: nowISO() });
-            }
-            toast('Məhsul yeniləndi', 'success');
-          } else {
-            data.createdAt = nowISO(); data.createdBy = 'admin';
-            await database.ref(`products/${qrId}`).set(data);
-            toast('Məhsul yaradıldı', 'success');
-          }
           resetForm();
         } catch(err) { toast('Xəta: ' + err.message, 'error'); }
       });
     }
-
     // PF Cancel
     const pfCancel = $('pf-cancel');
     if (pfCancel) pfCancel.addEventListener('click', resetForm);
@@ -579,12 +567,12 @@
         try {
           state.scanner = new Html5Qrcode('admin-scanner-element');
           await state.scanner.start({ facingMode: state.cameraId }, { fps: 30, qrbox: { width: 240, height: 240 } },
+            text => {
               stopAdminScan();
               const qrId = text.trim();
               const existing = state.productsArr.find(p => (p.qrCode || p.qrId || p.id) === qrId);
               if (existing) { window.editProduct(existing.id); toast('Mövcud məhsul: ' + (existing.productName || existing.name), 'info'); }
               else { resetForm(); toast('QR oxundu - yeni məhsul əlavə edin', 'success'); const nf = $('pf-name'); if (nf) nf.focus(); }
-              if (navigator.vibrate) navigator.vibrate(100);
               if (navigator.vibrate) navigator.vibrate(100);
             }, () => {});
           state.scanning = true;
