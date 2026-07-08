@@ -347,6 +347,18 @@ $('new-order-btn').addEventListener('click', async function() {
 });
 
 // ============================================
+// CART EDIT - Continue scanning into existing order
+// ============================================
+
+var cartEditBtn = $('cart-edit-btn');
+if (cartEditBtn) {
+  cartEditBtn.addEventListener('click', function() {
+    if (!state.currentOrderId) { toast('Sifariş yoxdur', 'warning'); return; }
+    startScanner();
+  });
+}
+
+// ============================================
 // SCANNER CONTROLS
 // ============================================
 

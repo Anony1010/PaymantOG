@@ -190,6 +190,16 @@ a.btn-icon { text-decoration: none; }
   border-bottom: 1px solid var(--border); flex-shrink: 0;
 }
 .cart-head h3 { font-size: 15px; font-weight: 700; flex: 1; }
+.cart-edit-btn {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--primary-light); color: var(--accent);
+  border: none; cursor: pointer;
+  transition: all 0.2s ease; flex-shrink: 0;
+}
+.cart-edit-btn:hover { background: var(--accent); color: #fff; }
+.cart-edit-btn:active { transform: scale(0.9); }
+.cart-edit-btn svg { display: block; }
 .cart-badge {
   background: var(--accent); color: #fff; font-size: 11px; font-weight: 700;
   padding: 2px 8px; border-radius: 20px; line-height: 1.5;
