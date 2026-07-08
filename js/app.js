@@ -191,7 +191,7 @@ function renderCart() {
   const count = state.cart.reduce((s, i) => s + i.qty, 0);
   $('cart-badge').textContent = count;
   $('cart-item-count').textContent = count;
-  $('cart-subtotal').textContent = fp(total);
+  
   $('cart-total').textContent = fp(total);
 
   $('cart-items').innerHTML = state.cart.map(item => `
