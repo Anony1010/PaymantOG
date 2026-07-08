@@ -128,7 +128,7 @@ a { color: inherit; text-decoration: none; }
 .header {
   position: sticky; top: 0; z-index: 100;
   background: transparent;
-  padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;
+  padding: 16px; display: flex; align-items: center; justify-content: space-between;
   min-height: 56px;
 }
 .header-left { display: flex; align-items: center; gap: 10px; }
@@ -345,7 +345,7 @@ a.btn-icon { text-decoration: none; }
 @media (min-width: 600px) {
   .hero { padding: 24px 24px 12px; }
   .history-wrap { padding: 16px 24px 32px; }
-  .header { padding: 16px 24px; min-height: 56px; }
+  .header { padding: 16px; min-height: 56px; }
   .header-left { gap: 14px; }
 
 }
@@ -354,7 +354,7 @@ a.btn-icon { text-decoration: none; }
   .history-wrap { padding: 20px 32px 40px; }
   .history-list { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .btn-hero { padding: 26px 24px; font-size: 22px; }
-  .header { padding: 18px 32px; min-height: 60px; }
+  .header { padding: 18px; min-height: 60px; }
   .header-left { gap: 16px; }
 
   .brand { font-size: 26px; letter-spacing: 1.2px; }
@@ -516,7 +516,7 @@ a.btn-icon { text-decoration: none; }
   .header {
     max-width: 100%;
     margin: 0 auto;
-    padding: 20px 52px;
+    padding: 20px;
     min-height: 64px;
   }
   .header-left {
@@ -558,7 +558,7 @@ a.btn-icon { text-decoration: none; }
 /* Safe area */
 @supports (padding: max(0px)) {
   .header {
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
   }
 }
