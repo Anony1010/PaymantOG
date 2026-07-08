@@ -116,7 +116,13 @@ function stopScanner() {
   if (state.scanner) { try { state.scanner.stop(); state.scanner.clear(); } catch(e) {} }
 }
 
-$('new-order-btn').addEventListener('click', startScanner);
+$('new-order-btn').addEventListener('click', function() {
+  // Resume AudioContext on user gesture (required for mobile)
+  if (state.audioCtx && state.audioCtx.state === 'suspended') {
+    state.audioCtx.resume().catch(function(){});
+  }
+  startScanner();
+});
 $('scanner-close').addEventListener('click', () => { stopScanner(); $('scanner-modal').classList.add('hidden'); });
 $('scanner-modal').querySelector('.modal-backdrop')?.addEventListener('click', () => { stopScanner(); $('scanner-modal').classList.add('hidden'); });
 
@@ -195,7 +201,7 @@ function changeQty(id, delta) {
 function renderCart() {
   const has = state.cart.length > 0;
   $('cart-section').classList.toggle('hidden', !has);
-  $('cart-spacer').classList.toggle('hidden', !has);
+  var sp = $('cart-spacer'); if (sp) sp.classList.toggle('hidden', !has);
   if (!has) return;
 
   const total = state.cart.reduce((s, i) => s + i.price * i.qty, 0);
