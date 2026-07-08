@@ -520,32 +520,37 @@
     });
 
     // QR Scanner
-    const startScan = $('admin-start-scanner');
-    if (startScan) {
-      startScan.addEventListener('click', async function() {
-        if (state.scanning) { stopAdminScan(); return; }
-        try {
-          state.scanner = new Html5Qrcode('admin-scanner-element');
-          await state.scanner.start({ facingMode: 'environment' }, { fps: 30, qrbox: { width: 240, height: 240 } },
-            text => {
-              stopAdminScan();
-              const qrId = text.trim();
-              const existing = state.productsArr.find(p => (p.qrCode || p.qrId || p.id) === qrId);
-              if (existing) { window.editProduct(existing.id); toast('Mövcud məhsul: ' + (existing.productName || existing.name), 'info'); }
-              else { resetForm(); toast('QR oxundu - yeni məhsul əlavə edin', 'success'); const nameField = $('pf-name'); if (nameField) nameField.focus(); }
-              if (navigator.vibrate) navigator.vibrate(100);
-            }, () => {});
-          state.scanning = true;
-          this.textContent = 'Kameranı bağla';
-        } catch(err) { toast('Kamera xətası: ' + err.message, 'error'); }
-      });
-    }
+
 
     function stopAdminScan() {
       state.scanning = false;
       if (state.scanner) { try { state.scanner.stop(); state.scanner.clear(); } catch(e) {} state.scanner = null; }
-      const btn = $('admin-start-scanner'); if (btn) btn.textContent = 'Kameranı aç';
     }
+
+    // Auto-start scanner when QR page is active
+    function startAdminScanner() {
+      if (state.scanning) return;
+      try {
+        state.scanner = new Html5Qrcode('admin-scanner-element');
+        state.scanner.start({ facingMode: 'environment' }, { fps: 30, qrbox: { width: 240, height: 240 } },
+          function(text) {
+            stopAdminScan();
+            var qrId = text.trim();
+            var existing = state.productsArr.find(function(p) { return (p.qrCode || p.qrId || p.id) === qrId; });
+            if (existing) { window.editProduct(existing.id); toast('Mövcud məhsul: ' + (existing.productName || existing.name), 'info'); }
+            else { resetForm(); toast('QR oxundu - yeni məhsul əlavə edin', 'success'); var nf = $('pf-name'); if (nf) nf.focus(); }
+            if (navigator.vibrate) navigator.vibrate(100);
+          }, function() {});
+        state.scanning = true;
+      } catch(err) { toast('Kamera xətası: ' + err.message, 'error'); }
+    }
+
+    // Start scanner when QR page becomes active
+    document.querySelectorAll('.nav-item[data-page="qr-scanner"]').forEach(function(item) {
+      item.addEventListener('click', function() {
+        setTimeout(startAdminScanner, 300);
+      });
+    });
 
     const flashBtn = $('flash-btn');
     if (flashBtn) {
