@@ -167,6 +167,10 @@ async function addItemToPendingOrder(product) {
       updatedAt: now()
     });
 
+    // Directly update local cart for immediate display
+    state.cart = items.map(function(i) { return { id: i.id, name: i.name, price: i.price, qty: i.qty }; });
+    renderCart();
+
     // Show success overlay after save
     showScanSuccess();
   } catch (err) {
@@ -189,7 +193,8 @@ async function startScanner() {
         formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E, Html5QrcodeSupportedFormats.PDF_417, Html5QrcodeSupportedFormats.DATA_MATRIX, Html5QrcodeSupportedFormats.AZTEC]
       },
       text => {
-        handleCode(text.trim());
+        // Handle scan asynchronously but catch errors
+        Promise.resolve(handleCode(text.trim())).catch(function(err){console.error(err);});
         // Pause camera for 2 seconds to prevent double-scan
         try { state.scanner.pause(); } catch(e) {}
         setTimeout(function() { try { state.scanner.resume(); } catch(e) {} }, 2000);
@@ -355,7 +360,7 @@ $('cam-btn').addEventListener('click', async () => {
     const isEnv = state.cameraId?.facingMode === 'environment';
     state.cameraId = { facingMode: isEnv ? 'user' : 'environment' };
     await state.scanner.start(state.cameraId, { fps: 30, qrbox: { width: 250, height: 250 } }, t => {
-      handleCode(t.trim());
+      Promise.resolve(handleCode(t.trim())).catch(function(err){console.error(err);});
       try { state.scanner.pause(); } catch(e) {}
       setTimeout(function() { try { state.scanner.resume(); } catch(e) {} }, 2000);
     }, () => {});
@@ -398,7 +403,7 @@ function renderHistory() {
   $('hist-count').textContent = completed.length;
 
   if (!completed.length) {
-    $('history-list').innerHTML = '<div class="history-empty">Hələ heç bir sifariş yoxdur</div>';
+    $('history-list').innerHTML = '';
     return;
   }
 
