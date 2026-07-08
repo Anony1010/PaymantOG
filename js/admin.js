@@ -59,7 +59,7 @@
 
   function initData() {
     if (!database) {
-      toast('Firebase bağlantısı yoxdur. Məlumatlar yüklənə bilmədi.', 'warning');
+      console.warn('Firebase bağlantısı yoxdur');
       return;
     }
 
@@ -70,7 +70,7 @@
       renderProducts();
       updateCategoryFilter();
       updateStats();
-    }, err => { console.error('Products error:', err); toast('Məhsullar yüklənə bilmədi', 'error'); });
+    }, err => { console.error('Products error:', err); console.warn('Məhsullar yüklənə bilmədi'); });
 
     // Orders realtime
     database.ref('orders').on('value', snap => {
