@@ -45,12 +45,12 @@
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
           </svg>
         </button>
-        <a href="admin.html" class="btn-icon" aria-label="Admin panel" title="Admin panel" style="display:flex;align-items:center;justify-content:center;color:var(--text-primary);text-decoration:none">
+        <button id="admin-btn" class="btn-icon" aria-label="Admin panel" title="Admin panel">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
-        </a>
+        </button>
       </div>
     </header>
 
@@ -127,6 +127,31 @@
               </button>
             </div>
             <p class="scanner-hint">QR kodu çərçivəyə yerləşdirin</p>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Admin Login Modal -->
+      <div id="admin-login-modal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content sm">
+          <div class="modal-header">
+            <h3>Admin Giriş</h3>
+            <button class="btn-close" id="admin-login-close">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="auth-brand" style="margin-bottom:16px">
+              <div class="auth-logo">G</div>
+            </div>
+            <form id="admin-login-form" autocomplete="off">
+              <div class="form-group">
+                <label>Admin Kodu</label>
+                <input type="password" id="admin-code-input" placeholder="Kodu daxil edin" required autocomplete="off" />
+              </div>
+              <p id="admin-login-error" class="error-message hidden"></p>
+              <button type="submit" id="admin-login-btn" class="btn btn-primary btn-block">Giriş</button>
+            </form>
           </div>
         </div>
       </div>
