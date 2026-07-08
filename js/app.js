@@ -1,6 +1,6 @@
 /**
- * GASHAM - User Panel v4
- * Firebase Realtime Database - Tam realtime POS sistemi
+ * GASHAM - User Panel v5
+ * Firebase Realtime Database - Auto-save orders on scan
  */
 
 const state = {
@@ -10,7 +10,9 @@ const state = {
   productsArr: [],
   scanner: null,
   scanning: false,
-  audioCtx: null
+  audioCtx: null,
+  currentOrderId: null,  // Firebase key for pending order
+  currentOrderNum: null  // Order number for pending order
 };
 
 const $ = id => document.getElementById(id);
@@ -50,7 +52,7 @@ function playBeep() {
 }
 
 // ============================================
-// SCAN SUCCESS
+// SCAN SUCCESS OVERLAY
 // ============================================
 
 function showScanSuccess() {
@@ -79,6 +81,100 @@ if (themeBtn) {
 }
 
 // ============================================
+// PENDING ORDER (Firebase auto-save)
+// ============================================
+
+function subscribeToCurrentOrder() {
+  if (!state.currentOrderId) return;
+  database.ref('orders/' + state.currentOrderId).on('value', snap => {
+    const order = snap.val();
+    if (!order) return;
+    state.cart = (order.items || []).map(item => ({ ...item }));
+    renderCart();
+  });
+}
+
+function unsubscribeFromCurrentOrder() {
+  if (state.currentOrderId) {
+    database.ref('orders/' + state.currentOrderId).off();
+  }
+}
+
+async function createPendingOrder() {
+  if (!database) { toast('Firebase bağlantısı yoxdur', 'error'); return null; }
+
+  // Clean up any previous pending order subscription
+  unsubscribeFromCurrentOrder();
+
+  try {
+    // Get next order number
+    const snap = await database.ref('orders').orderByChild('orderNumber').limitToLast(1).once('value');
+    let nextNum = 1;
+    snap.forEach(child => { nextNum = (child.val().orderNumber || 0) + 1; });
+
+    const orderRef = database.ref('orders').push();
+    state.currentOrderId = orderRef.key;
+    state.currentOrderNum = nextNum;
+
+    await orderRef.set({
+      orderNumber: nextNum,
+      items: [],
+      totalPrice: 0,
+      totalItems: 0,
+      status: 'Gözləmədə',
+      createdAt: now(),
+      updatedAt: now()
+    });
+
+    // Subscribe to this order for realtime cart updates
+    subscribeToCurrentOrder();
+    return state.currentOrderId;
+  } catch (err) {
+    toast('Sifariş yaradılmadı: ' + err.message, 'error');
+    return null;
+  }
+}
+
+async function addItemToPendingOrder(product) {
+  if (!state.currentOrderId) {
+    toast('Əvvəlcə Yeni Sifariş yaradın', 'warning');
+    return;
+  }
+
+  const name = product.productName || product.name || 'Məhsul';
+  const price = parseFloat(product.price || 0);
+
+  try {
+    const snap = await database.ref('orders/' + state.currentOrderId + '/items').once('value');
+    let items = snap.val() || [];
+
+    const existingIdx = items.findIndex(i => i.id === product.id);
+    if (existingIdx >= 0) {
+      items[existingIdx].qty = (items[existingIdx].qty || 1) + 1;
+      toast(name + ' sayı artırıldı (' + items[existingIdx].qty + ')', 'success');
+    } else {
+      items.push({ id: product.id, name, price, qty: 1 });
+      toast(name + ' əlavə edildi', 'success');
+    }
+
+    const totalItems = items.reduce((s, i) => s + i.qty, 0);
+    const totalPrice = items.reduce((s, i) => s + i.price * i.qty, 0);
+
+    await database.ref('orders/' + state.currentOrderId).update({
+      items: items,
+      totalItems: totalItems,
+      totalPrice: totalPrice,
+      updatedAt: now()
+    });
+
+    // Show success overlay after save
+    showScanSuccess();
+  } catch (err) {
+    toast('Xəta: ' + err.message, 'error');
+  }
+}
+
+// ============================================
 // QR SCANNER
 // ============================================
 
@@ -94,7 +190,7 @@ async function startScanner() {
       },
       text => {
         handleCode(text.trim());
-        // Kameran\u0131 2 saniy\u0259lik deaktiv et ki eyni QR dalbadal oxunmas\u0131n
+        // Pause camera for 2 seconds to prevent double-scan
         try { state.scanner.pause(); } catch(e) {}
         setTimeout(function() { try { state.scanner.resume(); } catch(e) {} }, 2000);
       },
@@ -112,13 +208,144 @@ function stopScanner() {
   if (state.scanner) { try { state.scanner.stop(); state.scanner.clear(); } catch(e) {} }
 }
 
-$('new-order-btn').addEventListener('click', function() {
+// ============================================
+// HANDLE SCANNED CODE
+// ============================================
+
+async function handleCode(code) {
+  if (!database) { toast('Firebase bağlantısı yoxdur', 'error'); return; }
+  // Ensure we have a pending order
+  if (!state.currentOrderId) {
+    await createPendingOrder();
+    if (!state.currentOrderId) return;
+  }
+  try {
+    // First search in local (realtime cached) products
+    var found = state.productsArr.find(function(p) { return (p.qrCode === code || p.qrId === code || p.id === code) && p.status !== 'inactive'; });
+    if (found) { await addItemToPendingOrder(found); return; }
+
+    // Fallback: direct database read
+    var snap = await database.ref('products/' + code).once('value');
+    if (snap.val() && snap.val().status !== 'inactive') {
+      await addItemToPendingOrder({ id: code, ...snap.val() });
+      return;
+    }
+    // Fallback: search all products by qrCode
+    var all = await database.ref('products').once('value');
+    var products = all.val() || {};
+    var entry = Object.entries(products).find(function(e) { return (e[1].qrCode === code || e[1].qrId === code) && e[1].status !== 'inactive'; });
+    if (entry) { await addItemToPendingOrder({ id: entry[0], ...entry[1] }); return; }
+    toast('Məhsul tapılmadı', 'error');
+  } catch(err) { toast('Xəta: ' + err.message, 'error'); }
+}
+
+// ============================================
+// CART (rendered from Firebase subscription)
+// ============================================
+
+function changeQty(id, delta) {
+  if (!state.currentOrderId) { toast('Sifariş yoxdur', 'warning'); return; }
+  database.ref('orders/' + state.currentOrderId + '/items').once('value').then(snap => {
+    let items = snap.val() || [];
+    const idx = items.findIndex(i => i.id === id);
+    if (idx < 0) return;
+    items[idx].qty = Math.max(0, (items[idx].qty || 1) + delta);
+    if (items[idx].qty === 0) {
+      items = items.filter(i => i.id !== id);
+    }
+    const totalItems = items.reduce((s, i) => s + i.qty, 0);
+    const totalPrice = items.reduce((s, i) => s + i.price * i.qty, 0);
+    return database.ref('orders/' + state.currentOrderId).update({
+      items: items,
+      totalItems: totalItems,
+      totalPrice: totalPrice,
+      updatedAt: now()
+    });
+  }).catch(function(err) { toast('Xəta: ' + err.message, 'error'); });
+}
+
+function renderCart() {
+  const has = state.cart.length > 0;
+  $('cart-section').classList.toggle('hidden', !has);
+  var sp = $('cart-spacer'); if (sp) sp.classList.toggle('hidden', !has);
+  if (!has) return;
+
+  const total = state.cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const count = state.cart.reduce((s, i) => s + i.qty, 0);
+  $('cart-badge').textContent = count;
+  $('cart-count').textContent = count;
+
+  $('cart-total').textContent = fp(total);
+
+  $('cart-body').innerHTML = state.cart.map(item => `
+    <div class="cart-item">
+      <div class="cart-item-info">
+        <span class="cart-item-name">${esc(item.name)}</span>
+        <span class="cart-item-price">${fp(item.price)}</span>
+      </div>
+      <div class="cart-item-actions">
+        <button class="btn-qty" onclick="changeQty('${item.id}', -1)">−</button>
+        <span class="cart-item-qty">${item.qty}</span>
+        <button class="btn-qty" onclick="changeQty('${item.id}', 1)">+</button>
+        <span class="cart-item-total">${fp(item.price * item.qty)}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.changeQty = changeQty;
+
+// ============================================
+// CONFIRM ORDER (finalize pending order)
+// ============================================
+
+$('confirm-btn').addEventListener('click', async () => {
+  if (!state.currentOrderId) { toast('Sifariş yoxdur', 'warning'); return; }
+  if (!state.cart.length) { toast('Sifariş boşdur', 'warning'); return; }
+
+  const btn = $('confirm-btn');
+  btn.disabled = true; btn.textContent = 'Təsdiqlənir...';
+
+  try {
+    await database.ref('orders/' + state.currentOrderId).update({
+      status: 'Təsdiqlənib',
+      updatedAt: now()
+    });
+
+    toast('Sifariş #' + state.currentOrderNum + ' təsdiqləndi!', 'success');
+
+    // Clean up
+    unsubscribeFromCurrentOrder();
+    state.currentOrderId = null;
+    state.currentOrderNum = null;
+    state.cart = [];
+    renderCart();
+
+    btn.disabled = false; btn.textContent = 'Təsdiqlə';
+  } catch (err) {
+    toast('Xəta: ' + err.message, 'error');
+    btn.disabled = false; btn.textContent = 'Təsdiqlə';
+  }
+});
+
+// ============================================
+// NEW ORDER BUTTON (create pending order + open scanner)
+// ============================================
+
+$('new-order-btn').addEventListener('click', async function() {
   // Resume AudioContext on user gesture (required for mobile)
   if (state.audioCtx && state.audioCtx.state === 'suspended') {
     state.audioCtx.resume().catch(function(){});
   }
+  // Create a pending order in Firebase, then open scanner
+  await createPendingOrder();
   startScanner();
 });
+
+// ============================================
+// SCANNER CONTROLS
+// ============================================
+
 $('scanner-close').addEventListener('click', () => { stopScanner(); $('scanner-modal').classList.add('hidden'); });
 $('scanner-modal').querySelector('.modal-backdrop')?.addEventListener('click', () => { stopScanner(); $('scanner-modal').classList.add('hidden'); });
 
@@ -146,126 +373,7 @@ $('flash-btn').addEventListener('click', async () => {
 });
 
 // ============================================
-// HANDLE SCANNED CODE
-// ============================================
-
-async function handleCode(code) {
-  if (!database) { toast('Firebase bağlantısı yoxdur', 'error'); return; }
-  try {
-    // First search in local (realtime cached) products
-    var found = state.productsArr.find(function(p) { return (p.qrCode === code || p.qrId === code || p.id === code) && p.status !== 'inactive'; });
-    if (found) { addToCart({ id: found.id, productName: found.productName, name: found.name, price: found.price, qrCode: found.qrCode }); playBeep(); if (navigator.vibrate) navigator.vibrate(80); return; }
-    
-    // Fallback: direct database read
-    var snap = await database.ref('products/' + code).once('value');
-    if (snap.val() && snap.val().status !== 'inactive') {
-      addToCart({ id: code, ...snap.val() });
-      playBeep();
-      if (navigator.vibrate) navigator.vibrate(80);
-      return;
-    }
-    // Fallback: search all products by qrCode
-    var all = await database.ref('products').once('value');
-    var products = all.val() || {};
-    var entry = Object.entries(products).find(function(e) { return (e[1].qrCode === code || e[1].qrId === code) && e[1].status !== 'inactive'; });
-    if (entry) { addToCart({ id: entry[0], ...entry[1] }); playBeep(); if (navigator.vibrate) navigator.vibrate(80); return; }
-    toast('Məhsul tapılmadı', 'error');
-  } catch(err) { toast('Xəta: ' + err.message, 'error'); }
-}
-
-// ============================================
-// CART
-// ============================================
-
-function addToCart(product) {
-  const name = product.productName || product.name || 'Məhsul';
-  const price = parseFloat(product.price || 0);
-  const existing = state.cart.find(i => i.id === product.id);
-  if (existing) { existing.qty++; toast(`${name} sayı artırıldı (${existing.qty})`, 'success'); }
-  else { state.cart.push({ id: product.id, name, price, qty: 1 }); toast(`${name} əlavə edildi`, 'success'); }
-  renderCart();
-}
-
-function changeQty(id, delta) {
-  const item = state.cart.find(i => i.id === id);
-  if (!item) return;
-  item.qty = Math.max(0, item.qty + delta);
-  if (item.qty === 0) state.cart = state.cart.filter(i => i.id !== id);
-  renderCart();
-}
-
-function renderCart() {
-  const has = state.cart.length > 0;
-  $('cart-section').classList.toggle('hidden', !has);
-  var sp = $('cart-spacer'); if (sp) sp.classList.toggle('hidden', !has);
-  if (!has) return;
-
-  const total = state.cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const count = state.cart.reduce((s, i) => s + i.qty, 0);
-  $('cart-badge').textContent = count;
-  $('cart-count').textContent = count;
-  
-  $('cart-total').textContent = fp(total);
-
-  $('cart-body').innerHTML = state.cart.map(item => `
-    <div class="cart-item">
-      <div class="cart-item-info">
-        <span class="cart-item-name">${esc(item.name)}</span>
-        <span class="cart-item-price">${fp(item.price)}</span>
-      </div>
-      <div class="cart-item-actions">
-        <button class="btn-qty" onclick="changeQty('${item.id}', -1)">−</button>
-        <span class="cart-item-qty">${item.qty}</span>
-        <button class="btn-qty" onclick="changeQty('${item.id}', 1)">+</button>
-        <span class="cart-item-total">${fp(item.price * item.qty)}</span>
-      </div>
-    </div>
-  `).join('');
-}
-
-window.changeQty = changeQty;
-
-// ============================================
-// CONFIRM ORDER
-// ============================================
-
-$('confirm-btn').addEventListener('click', async () => {
-  if (!state.cart.length) { toast('Sifariş boşdur', 'warning'); return; }
-  if (!database) { toast('Firebase yoxdur', 'error'); return; }
-
-  const btn = $('confirm-btn');
-  btn.disabled = true; btn.textContent = 'Yadda saxlanılır...';
-
-  try {
-    // Get next order number
-    const snap = await database.ref('orders').orderByChild('orderNumber').limitToLast(1).once('value');
-    let nextNum = 1;
-    snap.forEach(child => { nextNum = (child.val().orderNumber || 0) + 1; });
-
-    const orderRef = database.ref('orders').push();
-    await orderRef.set({
-      orderNumber: nextNum,
-      items: state.cart.map(i => ({ name: i.name, price: i.price, qty: i.qty })),
-      totalPrice: state.cart.reduce((s, i) => s + i.price * i.qty, 0),
-      totalItems: state.cart.reduce((s, i) => s + i.qty, 0),
-      status: 'Təsdiqlənib',
-      createdAt: now(),
-      updatedAt: now()
-    });
-
-    toast(`Sifariş #${nextNum} təsdiqləndi!`, 'success');
-    state.cart = [];
-    renderCart();
-    btn.disabled = false; btn.textContent = 'Təsdiqlə';
-    document.querySelector('.history-section')?.scrollIntoView({ behavior: 'smooth' });
-  } catch (err) {
-    toast('Xəta: ' + err.message, 'error');
-    btn.disabled = false; btn.textContent = 'Təsdiqlə';
-  }
-});
-
-// ============================================
-// REALTIME ORDERS
+// REALTIME ORDERS (history)
 // ============================================
 
 function subscribeRTDB() {
@@ -275,8 +383,8 @@ function subscribeRTDB() {
     state.products = snap.val() || {};
     state.productsArr = Object.entries(state.products).map(([id, v]) => ({ id, ...v }));
   }, err => { console.warn('Products load error:', err.message); });
-  
-  // Listen for orders
+
+  // Listen for orders (history - only completed)
   database.ref('orders').orderByChild('orderNumber').on('value', snap => {
     const data = snap.val() || {};
     state.orders = Object.entries(data)
@@ -291,7 +399,7 @@ function renderHistory() {
   $('hist-count').textContent = completed.length;
 
   if (!completed.length) {
-        $('history-list').innerHTML = '';
+    $('history-list').innerHTML = '<div class="history-empty">Hələ heç bir sifariş yoxdur</div>';
     return;
   }
 
@@ -315,14 +423,14 @@ function renderHistory() {
 }
 
 // ============================================
-// REVIEW
+// REVIEW MODAL
 // ============================================
 
 function showReview(orderId) {
   const order = state.orders.find(o => o.id === orderId);
   if (!order) return;
 
-  $('review-title').textContent = `Sifariş #${order.orderNumber}`;
+  $('review-title').textContent = 'Sifariş #' + order.orderNumber;
   const items = (order.items || []).map(item => `
     <div class="review-item">
       <div><strong>${esc(item.name)}</strong> <span class="review-item-qty">× ${item.qty}</span></div>
@@ -375,4 +483,3 @@ setTimeout(() => {
   $('app').classList.remove('hidden');
   setTimeout(() => $('loading-screen').style.display = 'none', 500);
 }, 500);
-
