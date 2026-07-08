@@ -534,7 +534,6 @@
         state.scanner = new Html5Qrcode('admin-scanner-element');
         state.scanner.start({ facingMode: 'environment' }, { fps: 30, qrbox: { width: 240, height: 240 } },
           function(text) {
-            stopAdminScan();
             var qrId = text.trim();
             var existing = state.productsArr.find(function(p) { return (p.qrCode || p.qrId || p.id) === qrId; });
             if (existing) { window.editProduct(existing.id); toast('Mövcud məhsul: ' + (existing.productName || existing.name), 'info'); }
@@ -576,7 +575,6 @@
           state.cameraId = isEnv ? 'user' : 'environment';
           await state.scanner.start({ facingMode: state.cameraId }, { fps: 30, qrbox: { width: 250, height: 250 } },
             text => {
-              stopAdminScan();
               const qrId = text.trim();
               const existing = state.productsArr.find(p => (p.qrCode || p.qrId || p.id) === qrId);
               if (existing) { window.editProduct(existing.id); toast('Mövcud məhsul: ' + (existing.productName || existing.name), 'info'); }
