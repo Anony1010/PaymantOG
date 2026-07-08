@@ -337,8 +337,7 @@ $('new-order-btn').addEventListener('click', async function() {
   if (state.audioCtx && state.audioCtx.state === 'suspended') {
     state.audioCtx.resume().catch(function(){});
   }
-  // Create a pending order in Firebase, then open scanner
-  await createPendingOrder();
+  // Open scanner - order will be created automatically on first scan
   startScanner();
 });
 
