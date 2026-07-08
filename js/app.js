@@ -42,7 +42,7 @@ function initBeep() { try { state.audioCtx = new (window.AudioContext || window.
 function playBeep() {
   try {
     const ctx = state.audioCtx; if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume();
+    if (ctx.state === 'suspended') { ctx.resume().catch(function(){}); }
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.connect(g); g.connect(ctx.destination);
     o.frequency.value = 1600; o.type = 'sine';
@@ -94,9 +94,9 @@ async function startScanner() {
       },
       text => {
         handleCode(text.trim());
-        // 1 second pause so same QR is not scanned again
+        // Kameran\u0131 2 saniy\u0259lik deaktiv et ki eyni QR dalbadal oxunmas\u0131n
         try { state.scanner.pause(); } catch(e) {}
-        setTimeout(function() { try { state.scanner.resume(); } catch(e) {} }, 1000);
+        setTimeout(function() { try { state.scanner.resume(); } catch(e) {} }, 2000);
       },
       () => {}
     );
@@ -125,7 +125,7 @@ $('cam-btn').addEventListener('click', async () => {
     await state.scanner.start(state.cameraId, { fps: 30, qrbox: { width: 250, height: 250 } }, t => {
       handleCode(t.trim());
       try { state.scanner.pause(); } catch(e) {}
-      setTimeout(function() { try { state.scanner.resume(); } catch(e) {} }, 1000);
+      setTimeout(function() { try { state.scanner.resume(); } catch(e) {} }, 2000);
     }, () => {});
   } catch(err) { toast('Kamera dəyişmə xətası', 'error'); }
 });

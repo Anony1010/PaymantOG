@@ -42,7 +42,20 @@
   function fp(p) { return `${parseFloat(p || 0).toFixed(2)} ₼`; }
   function fd(d) { return new Date(d).toLocaleDateString('az-AZ', { day: '2-digit', month: 'short', year: 'numeric' }); }
   function ft(d) { return new Date(d).toLocaleTimeString('az-AZ', { hour: '2-digit', minute: '2-digit' }); }
-  function nowISO() { return new Date().toISOString(); }
+  function playBeep() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') { ctx.resume().catch(function(){}); }
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = 1600; o.type = 'sine';
+    g.gain.setValueAtTime(0.3, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+    o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.12);
+  } catch(e) {}
+}
+
+function nowISO() { return new Date().toISOString(); }
 
   // ==================== AUTH ====================
 
@@ -544,6 +557,7 @@
             var existing = state.productsArr.find(function(p) { return (p.qrCode || p.qrId || p.id) === qrId; });
             if (existing) { window.editProduct(existing.id); toast('Mövcud məhsul: ' + (existing.productName || existing.name), 'info'); }
             else { resetForm(); toast('QR oxundu - yeni məhsul əlavə edin', 'success'); var nf = $('pf-name'); if (nf) nf.focus(); }
+            playBeep();
             if (navigator.vibrate) navigator.vibrate(100);
           }, function() {});
         state.scanning = true;
@@ -587,6 +601,7 @@
               const existing = state.productsArr.find(p => (p.qrCode || p.qrId || p.id) === qrId);
               if (existing) { window.editProduct(existing.id); toast('Mövcud məhsul: ' + (existing.productName || existing.name), 'info'); }
               else { resetForm(); toast('QR oxundu - yeni məhsul əlavə edin', 'success'); const nf = $('pf-name'); if (nf) nf.focus(); }
+              playBeep();
               if (navigator.vibrate) navigator.vibrate(100);
             }, () => {});
           state.scanning = true;
