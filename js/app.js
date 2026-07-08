@@ -12,7 +12,8 @@ const state = {
   scanning: false,
   audioCtx: null,
   currentOrderId: null,  // Firebase key for pending order
-  currentOrderNum: null  // Order number for pending order
+  currentOrderNum: null,  // Order number for pending order
+  reviewingOrderId: null   // Firebase key of order being viewed
 };
 
 const $ = id => document.getElementById(id);
@@ -443,6 +444,7 @@ function renderHistory() {
 // ============================================
 
 function showReview(orderId) {
+  state.reviewingOrderId = orderId;
   const order = state.orders.find(o => o.id === orderId);
   if (!order) return;
 
@@ -470,7 +472,31 @@ function showReview(orderId) {
 
 window.showReview = showReview;
 
-$('review-close').addEventListener('click', () => $('review-modal').classList.add('hidden'));
+$('review-close').addEventListener('click', () => { $('review-modal').classList.add('hidden'); state.reviewingOrderId = null; });
+var reviewEditBtn = $('review-edit-btn');
+if (reviewEditBtn) {
+  reviewEditBtn.addEventListener('click', async function() {
+    if (!state.reviewingOrderId) { toast('Sifariş tapılmadı', 'error'); return; }
+    var order = state.orders.find(function(o) { return o.id === state.reviewingOrderId; });
+    if (!order) { toast('Sifariş tapılmadı', 'error'); return; }
+    // Close review modal
+    $('review-modal').classList.add('hidden');
+    // Set current order to this order's data
+    state.currentOrderId = state.reviewingOrderId;
+    state.currentOrderNum = order.orderNumber;
+    // Re-open the order as pending
+    try {
+      await database.ref('orders/' + state.currentOrderId).update({ status: 'Gözləmədə', updatedAt: now() });
+      // Subscribe to this order for realtime cart updates
+      subscribeToCurrentOrder();
+      state.reviewingOrderId = null;
+      // Open scanner
+      startScanner();
+    } catch(err) {
+      toast('Xəta: ' + err.message, 'error');
+    }
+  });
+}
 $('review-modal').querySelector('.modal-backdrop')?.addEventListener('click', () => $('review-modal').classList.add('hidden'));
 
 document.addEventListener('keydown', e => {
