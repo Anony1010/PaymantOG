@@ -7,6 +7,7 @@ const state = {
   cart: [],
   orders: [],
   products: {},
+  productsArr: [],
   scanner: null,
   scanning: false,
   audioCtx: null
@@ -149,19 +150,23 @@ $('flash-btn').addEventListener('click', async () => {
 async function handleCode(code) {
   if (!database) { toast('Firebase bağlantısı yoxdur', 'error'); return; }
   try {
-    // Direct lookup
-    const snap = await database.ref(`products/${code}`).once('value');
+    // First search in local (realtime cached) products
+    var found = state.productsArr.find(function(p) { return (p.qrCode === code || p.qrId === code || p.id === code) && p.status !== 'inactive'; });
+    if (found) { addToCart({ id: found.id, productName: found.productName, name: found.name, price: found.price, qrCode: found.qrCode }); playBeep(); if (navigator.vibrate) navigator.vibrate(80); return; }
+    
+    // Fallback: direct database read
+    var snap = await database.ref('products/' + code).once('value');
     if (snap.val() && snap.val().status !== 'inactive') {
       addToCart({ id: code, ...snap.val() });
       playBeep();
       if (navigator.vibrate) navigator.vibrate(80);
       return;
     }
-    // Search by qrCode field
-    const all = await database.ref('products').once('value');
-    const products = all.val() || {};
-    const found = Object.entries(products).find(([id, p]) => (p.qrCode === code || p.qrId === code) && p.status !== 'inactive');
-    if (found) { addToCart({ id: found[0], ...found[1] }); playBeep(); if (navigator.vibrate) navigator.vibrate(80); return; }
+    // Fallback: search all products by qrCode
+    var all = await database.ref('products').once('value');
+    var products = all.val() || {};
+    var entry = Object.entries(products).find(function(e) { return (e[1].qrCode === code || e[1].qrId === code) && e[1].status !== 'inactive'; });
+    if (entry) { addToCart({ id: entry[0], ...entry[1] }); playBeep(); if (navigator.vibrate) navigator.vibrate(80); return; }
     toast('Məhsul tapılmadı', 'error');
   } catch(err) { toast('Xəta: ' + err.message, 'error'); }
 }
@@ -263,6 +268,12 @@ $('confirm-btn').addEventListener('click', async () => {
 
 function subscribeRTDB() {
   if (!database) return;
+  // Listen for products (realtime)
+  database.ref('products').on('value', snap => {
+    state.products = snap.val() || {};
+    state.productsArr = Object.entries(state.products).map(([id, v]) => ({ id, ...v }));
+  }, err => { console.warn('Products load error:', err.message); });
+  
   // Listen for orders
   database.ref('orders').orderByChild('orderNumber').on('value', snap => {
     const data = snap.val() || {};
