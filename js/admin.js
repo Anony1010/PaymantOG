@@ -42,17 +42,15 @@
   function fp(p) { return `${parseFloat(p || 0).toFixed(2)} ₼`; }
   function fd(d) { return new Date(d).toLocaleDateString('az-AZ', { day: '2-digit', month: 'short', year: 'numeric' }); }
   function ft(d) { return new Date(d).toLocaleTimeString('az-AZ', { hour: '2-digit', minute: '2-digit' }); }
+    var beepAudio = new Audio('assets/scan-beep.mp3');
+  beepAudio.preload = 'auto';
   function playBeep() {
-  try {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if (ctx.state === 'suspended') { ctx.resume().catch(function(){}); }
-    var o = ctx.createOscillator(), g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.frequency.value = 1600; o.type = 'sine';
-    g.gain.setValueAtTime(0.3, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
-    o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.12);
-  } catch(e) {}
+    try {
+      var clone = beepAudio.cloneNode();
+      clone.volume = 0.5;
+      clone.play().catch(function(){});
+    } catch(e) {}
+  }
 }
 
 function nowISO() { return new Date().toISOString(); }

@@ -39,17 +39,13 @@ function now() { return new Date().toISOString(); }
 // BEEP
 // ============================================
 
-function initBeep() { try { state.audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {} }
+var beepAudio = new Audio('assets/scan-beep.mp3');
+beepAudio.preload = 'auto';
 function playBeep() {
   try {
-    const ctx = state.audioCtx; if (!ctx) return;
-    if (ctx.state === 'suspended') { ctx.resume().catch(function(){}); }
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.frequency.value = 1600; o.type = 'sine';
-    g.gain.setValueAtTime(0.4, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-    o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.15);
+    var clone = beepAudio.cloneNode();
+    clone.volume = 0.5;
+    clone.play().catch(function(){});
   } catch(e) {}
 }
 
@@ -372,7 +368,6 @@ if ('serviceWorker' in navigator) {
 const savedTheme = localStorage.getItem('gasham-theme') || 'light';
 document.documentElement.setAttribute('data-theme', savedTheme);
 
-initBeep();
 subscribeRTDB();
 
 setTimeout(() => {
