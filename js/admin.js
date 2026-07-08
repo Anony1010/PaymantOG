@@ -6,8 +6,6 @@
 (function() {
   'use strict';
 
-  const ADMIN_CODE = '66';
-  const SESSION_KEY = 'gasham_admin_session';
 
   const state = {
     products: {},
@@ -47,25 +45,15 @@
 
   // ==================== AUTH ====================
 
-  function checkSession() { return localStorage.getItem(SESSION_KEY) === 'true'; }
-  function saveSession() { localStorage.setItem(SESSION_KEY, 'true'); }
-  function clearSession() { localStorage.removeItem(SESSION_KEY); }
 
   // ==================== SCREENS ====================
 
   function showDashboard() {
-    const auth = $('auth-screen');
     const dash = $('dashboard-screen');
-    if (auth) auth.classList.add('hidden');
     if (dash) dash.classList.remove('hidden');
   }
 
-  function showAuth() {
-    const auth = $('auth-screen');
-    const dash = $('dashboard-screen');
-    if (dash) dash.classList.add('hidden');
-    if (auth) auth.classList.remove('hidden');
-  }
+  
 
   // ==================== INIT DATA ====================
 
@@ -332,31 +320,13 @@
     const sidebarClose = $('sidebar-close');
     if (sidebarClose) sidebarClose.addEventListener('click', () => { const s = $('sidebar'); if (s) s.classList.remove('open'); });
 
-    // Login form
-    const loginForm = $('admin-login-form');
-    if (loginForm) {
-      loginForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const codeInput = $('admin-code');
-        const errorEl = $('login-error');
-        const code = codeInput ? codeInput.value.trim() : '';
-        if (code === ADMIN_CODE) {
-          saveSession();
-          showDashboard();
-          setTimeout(initData, 300);
-          toast('Giriş uğurlu', 'success');
-        } else {
-          if (errorEl) { errorEl.textContent = 'Yanlış kod!'; errorEl.classList.remove('hidden'); }
-          if (codeInput) { codeInput.value = ''; codeInput.focus(); }
-        }
-      });
-    }
 
-    // Logout
+
+// Logout (istifadəçi panelinə qayıt)
     const logoutBtn = $('logout-btn');
-    if (logoutBtn) logoutBtn.addEventListener('click', () => { clearSession(); showAuth(); });
+    if (logoutBtn) logoutBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
     const settingsLogout = $('settings-logout');
-    if (settingsLogout) settingsLogout.addEventListener('click', () => { clearSession(); showAuth(); });
+    if (settingsLogout) settingsLogout.addEventListener('click', () => { window.location.href = 'index.html'; });
 
     // Product form
         if (!database) { toast('Firebase yoxdur', 'error'); return; }
@@ -634,13 +604,9 @@
       }, 500);
     }
 
-    // Auth check
-    if (checkSession()) {
-      showDashboard();
-      setTimeout(initData, 600);
-    } else {
-      showAuth();
-    }
+    // Dashboard aç
+    showDashboard();
+    setTimeout(initData, 600);
   });
 
   function downloadCSV(c, f) {
