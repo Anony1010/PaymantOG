@@ -1,40 +1,30 @@
 /**
  * GASHAM - Firebase Configuration
- * Öz Firebase layihənizin məlumatlarını daxil edin.
- * Firebase xidmətləri əlçatan olmasa belə app işləməyə davam edir.
+ * Firebase Realtime Database ilə tam inteqrasiya
  */
 
-// Firebase konfiqurasiya - Öz məlumatlarınızı daxil edin
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDnbN3yJfuHejYqTv5HsisJMec0QjpaJzg",
+  authDomain: "chatog-94528.firebaseapp.com",
+  databaseURL: "https://chatog-94528-default-rtdb.firebaseio.com",
+  projectId: "chatog-94528",
+  storageBucket: "chatog-94528.firebasestorage.app",
+  messagingSenderId: "877401186095",
+  appId: "1:877401186095:web:04d181fbbf2aaebb64cbda"
 };
 
-// Firebase xidmətləri
-let db = null;
-let auth = null;
-let storage = null;
+// Firebase xidmətləri (global)
+let database = null;
 
 try {
-  // Firebase-i başlat
   if (typeof firebase !== 'undefined') {
     firebase.initializeApp(firebaseConfig);
-    db = firebase.firestore();
-    auth = firebase.auth();
-    storage = firebase.storage();
-
-    // Realtime settings
-    db.settings({
-      cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
-      merge: true
+    database = firebase.database();
+    // Offline persistence aktiv
+    database.ref('.info/connected').on('value', snap => {
+      console.log('Firebase bağlantısı:', snap.val() ? 'ONLINE' : 'OFFLINE');
     });
-    db.enablePersistence()
-      .catch(err => console.warn('Firestore persistence xətası:', err));
   }
 } catch (err) {
-  console.warn('Firebase yüklənmədi. Offline rejimdə işləyir.', err.message);
+  console.warn('Firebase yüklənmədi:', err.message);
 }

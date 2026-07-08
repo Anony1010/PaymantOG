@@ -22,8 +22,30 @@
   <!-- Toast Container -->
   <div id="toast-container"></div>
 
+  <!-- Auth Screen (Code: 66) -->
+  <div id="auth-screen">
+    <div class="auth-container">
+      <div class="auth-brand">
+        <div class="auth-logo">G</div>
+        <h1>GASHAM</h1>
+        <p>Admin Panel</p>
+      </div>
+      <form id="admin-login-form" class="auth-form" autocomplete="off">
+        <div class="form-group">
+          <label>Admin Kodu</label>
+          <input type="password" id="admin-code" placeholder="Kodu daxil edin" required autocomplete="off" />
+        </div>
+        <button type="submit" id="login-btn" class="btn btn-primary btn-block">Giriş</button>
+        <p id="login-error" class="error-message hidden"></p>
+      </form>
+      <p style="text-align:center;margin-top:14px;font-size:13px;color:var(--text-muted)">
+        <a href="index.html" style="color:var(--accent)">← İstifadəçi Panelinə qayıt</a>
+      </p>
+    </div>
+  </div>
+
   <!-- Admin Dashboard -->
-  <div id="dashboard-screen">
+  <div id="dashboard-screen" class="hidden">
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
@@ -37,7 +59,7 @@
           <span>Dashboard</span>
         </button>
         <button class="nav-item" data-page="products">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
           <span>Məhsullar</span>
         </button>
         <button class="nav-item" data-page="orders">
@@ -45,19 +67,17 @@
           <span>Sifarişlər</span>
         </button>
         <button class="nav-item" data-page="qr-scanner">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="3" height="3"/><rect x="3" y="9" width="3" height="3"/><rect x="3" y="15" width="3" height="3"/><rect x="9" y="3" width="3" height="3"/><rect x="15" y="3" width="3" height="3"/><rect x="9" y="15" width="3" height="3"/><rect x="15" y="15" width="3" height="3"/><rect x="15" y="9" width="3" height="3"/><rect x="21" y="9" width="3" height="3"/><rect x="21" y="15" width="3" height="3"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="3" height="3"/><rect x="9" y="3" width="3" height="3"/><rect x="15" y="3" width="3" height="3"/><rect x="3" y="9" width="3" height="3"/><rect x="15" y="9" width="3" height="3"/><rect x="3" y="15" width="3" height="3"/><rect x="9" y="15" width="3" height="3"/><rect x="15" y="15" width="3" height="3"/></svg>
           <span>QR Scan</span>
         </button>
         <button class="nav-item" data-page="settings">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           <span>Parametrlər</span>
         </button>
       </nav>
       <div class="sidebar-footer">
-        <div class="admin-info">
-          <span class="admin-title">GASHAM Admin</span>
-        </div>
-        <a href="index.html" class="btn btn-outline btn-sm" style="text-align:center;text-decoration:none">← İstifadəçi Paneli</a>
+        <div class="admin-info"><span class="admin-title">GASHAM Admin</span></div>
+        <button id="logout-btn" class="btn btn-outline btn-sm">Çıxış</button>
       </div>
     </aside>
 
@@ -67,36 +87,27 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <span class="topbar-title">GASHAM Admin</span>
-      <a href="index.html" class="btn-icon" style="display:flex;align-items:center;justify-content:center;color:var(--text-primary)">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      </a>
+      <a href="index.html" class="btn-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
     </header>
 
-    <!-- Main Content Area -->
+    <!-- Main Content -->
     <div class="main-content" id="main-content">
-      <!-- Dashboard Page -->
+      <!-- Dashboard -->
       <div class="page active" id="page-dashboard">
-        <div class="page-header">
-          <h1>Dashboard</h1>
-        </div>
-        <div class="stats-grid" id="stats-grid">
+        <div class="page-header"><h1>Dashboard</h1></div>
+        <div class="stats-grid">
           <div class="stat-card"><div class="stat-icon blue"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div><div class="stat-info"><span class="stat-label">Məhsullar</span><span class="stat-value" id="stat-products">0</span></div></div>
           <div class="stat-card"><div class="stat-icon green"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div><div class="stat-info"><span class="stat-label">Ümumi Sifariş</span><span class="stat-value" id="stat-total-orders">0</span></div></div>
           <div class="stat-card"><div class="stat-icon orange"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-info"><span class="stat-label">Bu gün</span><span class="stat-value" id="stat-today-orders">0</span></div></div>
           <div class="stat-card"><div class="stat-icon purple"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="stat-info"><span class="stat-label">Ümumi Gəlir</span><span class="stat-value" id="stat-revenue">0.00 ₼</span></div></div>
           <div class="stat-card"><div class="stat-icon pink"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></div><div class="stat-info"><span class="stat-label">Ən çox satılan</span><span class="stat-value" id="stat-top-product">-</span></div></div>
-          <div class="stat-card full-width"><div class="stat-header"><span>Son Sifarişlər</span></div><div id="recent-orders-list" class="recent-list"><p class="muted">Heç bir sifariş yoxdur</p></div></div>
+          <div class="stat-card full-width"><div class="stat-header">Son Sifarişlər</div><div id="recent-orders-list" class="recent-list"><p class="muted">Heç bir sifariş yoxdur</p></div></div>
         </div>
       </div>
 
-      <!-- Products Page -->
+      <!-- Products -->
       <div class="page" id="page-products">
-        <div class="page-header">
-          <h1>Məhsullar</h1>
-          <div class="page-actions">
-            <button id="add-product-btn" class="btn btn-primary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Yeni</button>
-          </div>
-        </div>
+        <div class="page-header"><h1>Məhsullar</h1><div class="page-actions"><button id="add-product-btn" class="btn btn-primary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Yeni</button></div></div>
         <div class="toolbar">
           <div class="toolbar-left">
             <input type="text" id="product-search" placeholder="Axtar..." class="search-input" />
@@ -120,20 +131,14 @@
         <div id="products-empty" class="empty-state hidden"><p>Məhsul tapılmadı</p></div>
       </div>
 
-      <!-- Orders Page -->
+      <!-- Orders -->
       <div class="page" id="page-orders">
-        <div class="page-header">
-          <h1>Sifarişlər</h1>
-        </div>
+        <div class="page-header"><h1>Sifarişlər</h1></div>
         <div class="toolbar">
           <div class="toolbar-left">
-            <input type="text" id="order-search" placeholder="Sifariş nömrəsi..." class="search-input" />
+            <input type="text" id="order-search" placeholder="Nömrə..." class="search-input" />
             <input type="date" id="order-date-filter" class="select-input" />
-            <select id="order-status-filter" class="select-input">
-              <option value="">Bütün statuslar</option>
-              <option value="Təsdiqlənib">Təsdiqlənib</option>
-              <option value="active">Aktiv</option>
-            </select>
+            <select id="order-status-filter" class="select-input"><option value="">Bütün statuslar</option><option value="Təsdiqlənib">Təsdiqlənib</option><option value="active">Aktiv</option></select>
           </div>
           <div class="toolbar-right">
             <button id="orders-export-pdf" class="btn btn-sm btn-outline">PDF</button>
@@ -144,13 +149,13 @@
         </div>
         <div class="table-container">
           <table class="data-table" id="orders-table">
-            <thead><tr><th>Sifariş #</th><th>Tarix</th><th>Saat</th><th>Məhsul Sayı</th><th>Cəmi</th><th>Status</th><th>Əməliyyat</th></tr></thead>
+            <thead><tr><th>Sifariş #</th><th>Tarix</th><th>Saat</th><th>Say</th><th>Cəmi</th><th>Status</th><th>Əməliyyat</th></tr></thead>
             <tbody id="orders-tbody"></tbody>
           </table>
         </div>
       </div>
 
-      <!-- QR Scanner Page -->
+      <!-- QR Scanner -->
       <div class="page" id="page-qr-scanner">
         <div class="page-header"><h1>QR Scan - Məhsul Əlavə Et</h1></div>
         <div class="scanner-page-layout">
@@ -170,19 +175,19 @@
             <form id="product-form" autocomplete="off">
               <input type="hidden" id="product-id" />
               <div class="form-row">
-                <div class="form-group"><label>QR ID</label><input type="text" id="pf-qr-id" placeholder="QR kodu oxut" required /></div>
-                <div class="form-group"><label>Ad</label><input type="text" id="pf-name" required /></div>
+                <div class="form-group"><label>QR ID *</label><input type="text" id="pf-qr-id" placeholder="QR kodu oxut" required /></div>
+                <div class="form-group"><label>Ad *</label><input type="text" id="pf-name" required /></div>
               </div>
               <div class="form-row">
-                <div class="form-group"><label>Qiymət (₼)</label><input type="number" id="pf-price" step="0.01" min="0" required /></div>
-                <div class="form-group"><label>Stok sayı</label><input type="number" id="pf-stock" min="0" value="0" /></div>
+                <div class="form-group"><label>Qiymət (₼) *</label><input type="number" id="pf-price" step="0.01" min="0" required /></div>
+                <div class="form-group"><label>Stok</label><input type="number" id="pf-stock" min="0" value="0" /></div>
               </div>
               <div class="form-row">
                 <div class="form-group"><label>Kateqoriya</label><input type="text" id="pf-category" placeholder="Məs: İçkilər" /></div>
                 <div class="form-group"><label>Barcode</label><input type="text" id="pf-barcode" /></div>
               </div>
               <div class="form-group"><label>Qeyd</label><textarea id="pf-note" rows="2"></textarea></div>
-              <div class="form-group"><label>Şəkil URL</label><input type="text" id="pf-image" placeholder="https://..." /></div>
+              <div class="form-group"><label>Şəkil URL</label><input type="url" id="pf-image" placeholder="https://..." /></div>
               <div class="form-group"><label>Status</label><select id="pf-status"><option value="active">Aktiv</option><option value="inactive">Deaktiv</option></select></div>
               <div class="form-actions">
                 <button type="submit" id="pf-submit" class="btn btn-primary">Yadda saxla</button>
@@ -194,17 +199,16 @@
         </div>
       </div>
 
-      <!-- Settings Page -->
+      <!-- Settings -->
       <div class="page" id="page-settings">
         <div class="page-header"><h1>Parametrlər</h1></div>
         <div class="settings-card">
-          <div class="settings-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          </div>
+          <div class="settings-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
           <div>
             <h3>Admin Panel</h3>
-            <p class="muted">GASHAM POS sisteminin idarəetmə paneli. Firebase bağlantısı <code>js/firebase-config.js</code> faylında konfiqurasiya olunur.</p>
-            <a href="index.html" class="btn btn-outline mt-1" style="display:inline-block">İstifadəçi Panelinə keç</a>
+            <p class="muted">GASHAM POS sistemi. Bütün məlumatlar Firebase Realtime Database-də saxlanılır.</p>
+            <p class="muted">Admin kodu: <strong>66</strong></p>
+            <button id="settings-logout" class="btn btn-danger mt-1">Çıxış et</button>
           </div>
         </div>
       </div>
@@ -217,14 +221,13 @@
     <div class="modal-content sm">
       <div class="modal-header"><h3>Import Məhsullar</h3><button class="btn-close" id="import-modal-close">&times;</button></div>
       <div class="modal-body">
-        <p style="font-size:14px;margin-bottom:12px;color:var(--text-secondary)">CSV faylı seçin (başlıqlar: qrId, name, price, category, stock, barcode, status)</p>
-        <input type="file" id="import-file" accept=".csv" class="form-control-file" />
+        <p style="font-size:14px;margin-bottom:12px;color:var(--text-secondary)">CSV faylı (başlıqlar: qrId, name, price, category, stock, barcode)</p>
+        <input type="file" id="import-file" accept=".csv" />
         <button id="import-execute" class="btn btn-primary mt-1">Import et</button>
       </div>
     </div>
   </div>
 
-  <!-- Price History Modal -->
   <div id="price-history-modal" class="modal hidden">
     <div class="modal-backdrop"></div>
     <div class="modal-content sm">
@@ -233,7 +236,6 @@
     </div>
   </div>
 
-  <!-- Order Detail Modal -->
   <div id="order-detail-modal" class="modal hidden">
     <div class="modal-backdrop"></div>
     <div class="modal-content">
@@ -247,9 +249,7 @@
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-database-compat.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="js/firebase-config.js"></script>
   <script src="js/admin.js"></script>

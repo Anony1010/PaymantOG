@@ -1,204 +1,136 @@
 /**
- * GASHAM - Admin Panel Application v3
- * Birbaşa giriş, tam sifariş idarəetməsi
+ * GASHAM - Admin Panel v4
+ * Firebase Realtime Database + Code 66 giriş
  */
 
-// ============================================
-// STATE
-// ============================================
+const ADMIN_CODE = '66';
+const SESSION_KEY = 'gasham_admin';
 
-const adminState = {
-  products: [],
-  orders: [],
-  scanner: null,
-  scannerRunning: false,
-  flashOn: false,
-  cameraId: 'environment',
+const state = {
+  products: {},
+  productsArr: [],
+  orders: {},
+  ordersArr: [],
   selectedProducts: new Set(),
   editingProductId: null,
   editingOrderId: null,
   editingOrderItems: []
 };
 
-// ============================================
-// DOM REFS
-// ============================================
-
-const $a = id => document.getElementById(id);
-const domA = {
-  loading: $a('loading-screen'),
-  sidebar: $a('sidebar'),
-  sidebarToggle: $a('sidebar-toggle'),
-  sidebarClose: $a('sidebar-close'),
-  themeToggle: $a('theme-toggle-admin'),
-  navItems: document.querySelectorAll('.nav-item'),
-  pages: document.querySelectorAll('.page'),
-  // Stats
-  statProducts: $a('stat-products'),
-  statTotalOrders: $a('stat-total-orders'),
-  statTodayOrders: $a('stat-today-orders'),
-  statRevenue: $a('stat-revenue'),
-  statTopProduct: $a('stat-top-product'),
-  recentOrders: $a('recent-orders-list'),
-  // Products
-  productsTbody: $a('products-tbody'),
-  productsEmpty: $a('products-empty'),
-  productSearch: $a('product-search'),
-  productCategoryFilter: $a('product-category-filter'),
-  productSort: $a('product-sort'),
-  selectAll: $a('select-all-products'),
-  addProductBtn: $a('add-product-btn'),
-  bulkDeleteBtn: $a('bulk-delete-btn'),
-  exportExcel: $a('export-excel'),
-  exportPdf: $a('export-pdf'),
-  exportCsv: $a('export-csv'),
-  importBtn: $a('import-btn'),
-  // Product Form
-  productForm: $a('product-form'),
-  pfQrId: $a('pf-qr-id'),
-  pfName: $a('pf-name'),
-  pfPrice: $a('pf-price'),
-  pfStock: $a('pf-stock'),
-  pfCategory: $a('pf-category'),
-  pfBarcode: $a('pf-barcode'),
-  pfNote: $a('pf-note'),
-  pfImage: $a('pf-image'),
-  pfStatus: $a('pf-status'),
-  pfSubmit: $a('pf-submit'),
-  pfCancel: $a('pf-cancel'),
-  pfDelete: $a('pf-delete'),
-  // Scanner
-  adminScannerElement: $a('admin-scanner-element'),
-  adminFlashToggle: $a('admin-flash-toggle'),
-  adminCameraSwitch: $a('admin-camera-switch'),
-  adminStartScanner: $a('admin-start-scanner'),
-  // Orders
-  ordersTbody: $a('orders-tbody'),
-  orderSearch: $a('order-search'),
-  orderDateFilter: $a('order-date-filter'),
-  orderStatusFilter: $a('order-status-filter'),
-  ordersExportPdf: $a('orders-export-pdf'),
-  ordersExportExcel: $a('orders-export-excel'),
-  ordersExportCsv: $a('orders-export-csv'),
-  ordersPrint: $a('orders-print'),
-  // Order Detail
-  orderDetailModal: $a('order-detail-modal'),
-  orderDetailTitle: $a('order-detail-title'),
-  orderDetailBody: $a('order-detail-body'),
-  orderDetailFooter: $a('order-detail-footer'),
-  orderDetailClose: $a('order-detail-close'),
-  orderSaveChanges: $a('order-save-changes'),
-  orderDeleteFull: $a('order-delete-full'),
-  // Import
-  importModal: $a('import-modal'),
-  importClose: $a('import-modal-close'),
-  importFile: $a('import-file'),
-  importExecute: $a('import-execute'),
-  // Price History
-  priceHistoryModal: $a('price-history-modal'),
-  priceHistoryClose: $a('price-history-close'),
-  priceHistoryBody: $a('price-history-body'),
-  toastContainer: $a('toast-container')
-};
+const $ = id => document.getElementById(id);
 
 // ============================================
-// UTILITY
+// AUTH
 // ============================================
 
-function showAdminToast(msg, type = 'info') {
-  const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.innerHTML = `
-    <span class="toast-icon">${icons[type] || 'ℹ'}</span>
-    <span class="toast-message">${msg}</span>
-    <button class="toast-close">&times;</button>`;
-  toast.querySelector('.toast-close').onclick = () => {
-    toast.classList.add('removing');
-    setTimeout(() => toast.remove(), 300);
-  };
-  domA.toastContainer.appendChild(toast);
-  setTimeout(() => {
-    toast.classList.add('removing');
-    setTimeout(() => toast.remove(), 300);
-  }, 4000);
+function checkSession() { return localStorage.getItem(SESSION_KEY) === 'true'; }
+function saveSession() { localStorage.setItem(SESSION_KEY, 'true'); }
+function clearSession() { localStorage.removeItem(SESSION_KEY); }
+
+const authScreen = $('auth-screen');
+const dashScreen = $('dashboard-screen');
+
+function showDashboard() {
+  authScreen.classList.add('hidden');
+  dashScreen.classList.remove('hidden');
 }
 
-function escHtml(t) {
-  const d = document.createElement('div');
-  d.textContent = t;
-  return d.innerHTML;
+function showAuth() {
+  dashScreen.classList.add('hidden');
+  authScreen.classList.remove('hidden');
 }
 
-function fmtPrice(p) { return `${parseFloat(p || 0).toFixed(2)} ₼`; }
-
-function fmtDate(d) {
-  const date = d?.toDate ? d.toDate() : new Date(d);
-  return date.toLocaleDateString('az-AZ', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-function fmtTime(d) {
-  const date = d?.toDate ? d.toDate() : new Date(d);
-  return date.toLocaleTimeString('az-AZ', { hour: '2-digit', minute: '2-digit' });
-}
-
-// ============================================
-// NAVIGATION
-// ============================================
-
-domA.navItems.forEach(item => {
-  item.addEventListener('click', () => {
-    domA.navItems.forEach(n => n.classList.remove('active'));
-    item.classList.add('active');
-    domA.pages.forEach(p => p.classList.remove('active'));
-    const page = document.getElementById(`page-${item.dataset.page}`);
-    if (page) page.classList.add('active');
-    domA.sidebar.classList.remove('open');
-  });
+// Login form
+$('admin-login-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const code = $('admin-code').value.trim();
+  if (code === ADMIN_CODE) {
+    saveSession();
+    showDashboard();
+    initData();
+    toast('Giriş uğurlu', 'success');
+  } else {
+    $('login-error').textContent = 'Yanlış kod!';
+    $('login-error').classList.remove('hidden');
+    $('admin-code').value = '';
+    $('admin-code').focus();
+  }
 });
 
-domA.sidebarToggle.addEventListener('click', () => domA.sidebar.classList.add('open'));
-domA.sidebarClose.addEventListener('click', () => domA.sidebar.classList.remove('open'));
+$('logout-btn').addEventListener('click', () => { clearSession(); showAuth(); });
+$('settings-logout')?.addEventListener('click', () => { clearSession(); showAuth(); });
 
-// ============================================
-// THEME
-// ============================================
-
-domA.themeToggle.addEventListener('click', () => {
-  const current = document.documentElement.getAttribute('data-theme');
-  const next = current === 'dark' ? 'light' : 'dark';
+// Theme
+const savedTheme = localStorage.getItem('gasham-theme') || 'light';
+document.documentElement.setAttribute('data-theme', savedTheme);
+$('theme-toggle-admin').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('gasham-theme', next);
 });
 
 // ============================================
-// REALTIME DATA
+// UTILITY
 // ============================================
 
-function initAdminData() {
-  if (!db) {
-    showAdminToast('Firebase bağlantısı yoxdur. Məlumatlar yüklənə bilmədi.', 'warning');
-    domA.statProducts.textContent = '—';
-    domA.statTotalOrders.textContent = '—';
-    return;
-  }
+function toast(msg, type = 'info') {
+  const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span class="toast-icon">${icons[type]}</span><span class="toast-message">${msg}</span><button class="toast-close">&times;</button>`;
+  t.querySelector('.toast-close').onclick = () => { t.classList.add('removing'); setTimeout(() => t.remove(), 300); };
+  $('toast-container').appendChild(t);
+  setTimeout(() => { t.classList.add('removing'); setTimeout(() => t.remove(), 300); }, 4000);
+}
 
-  db.collection('products').onSnapshot(snapshot => {
-    adminState.products = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+function fp(p) { return `${parseFloat(p || 0).toFixed(2)} ₼`; }
+function fd(d) { const dt = new Date(d); return dt.toLocaleDateString('az-AZ', { day: '2-digit', month: 'short', year: 'numeric' }); }
+function ft(d) { const dt = new Date(d); return dt.toLocaleTimeString('az-AZ', { hour: '2-digit', minute: '2-digit' }); }
+function now() { return new Date().toISOString(); }
+
+// ============================================
+// NAVIGATION
+// ============================================
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const page = $(`page-${item.dataset.page}`);
+    if (page) page.classList.add('active');
+    $('sidebar').classList.remove('open');
+  });
+});
+$('sidebar-toggle').addEventListener('click', () => $('sidebar').classList.add('open'));
+$('sidebar-close').addEventListener('click', () => $('sidebar').classList.remove('open'));
+
+// ============================================
+// REALTIME DATABASE
+// ============================================
+
+function initData() {
+  if (!database) { toast('Firebase bağlantısı yoxdur', 'error'); return; }
+
+  // Products
+  database.ref('products').on('value', snap => {
+    state.products = snap.val() || {};
+    state.productsArr = Object.entries(state.products).map(([id, v]) => ({ id, ...v }));
     renderProducts();
     updateCategoryFilter();
     updateStats();
-  }, err => {
-    console.error('Products load error:', err);
-    showAdminToast('Məhsullar yüklənə bilmədi: ' + err.message, 'error');
   });
 
-  db.collection('orders').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
-    adminState.orders = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  // Orders
+  database.ref('orders').orderByChild('orderNumber').on('value', snap => {
+    state.orders = snap.val() || {};
+    state.ordersArr = Object.entries(state.orders)
+      .map(([id, v]) => ({ id, ...v }))
+      .sort((a, b) => (b.orderNumber || 0) - (a.orderNumber || 0));
     renderOrdersTable();
     updateStats();
-  }, err => {
-    console.error('Orders load error:', err);
   });
 }
 
@@ -207,33 +139,27 @@ function initAdminData() {
 // ============================================
 
 function updateStats() {
-  const products = adminState.products;
-  const orders = adminState.orders;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const products = state.productsArr;
+  const orders = state.ordersArr;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
 
-  domA.statProducts.textContent = products.length;
-  domA.statTotalOrders.textContent = orders.length;
+  $('stat-products').textContent = products.length;
+  $('stat-total-orders').textContent = orders.length;
 
-  const todayOrders = orders.filter(o => {
-    const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
-    return d >= today;
-  });
-  domA.statTodayOrders.textContent = todayOrders.length;
+  const todayOrders = orders.filter(o => new Date(o.createdAt || 0) >= today);
+  $('stat-today-orders').textContent = todayOrders.length;
 
-  const revenue = orders.reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
-  domA.statRevenue.textContent = fmtPrice(revenue);
+  const revenue = orders.reduce((s, o) => s + parseFloat(o.totalPrice || o.total || 0), 0);
+  $('stat-revenue').textContent = fp(revenue);
 
-  const productSales = {};
-  orders.forEach(o => (o.items || []).forEach(item => {
-    productSales[item.name] = (productSales[item.name] || 0) + (item.qty || 0);
-  }));
-  const top = Object.entries(productSales).sort((a, b) => b[1] - a[1])[0];
-  domA.statTopProduct.textContent = top ? `${top[0]} (${top[1]})` : '-';
+  const sales = {};
+  orders.forEach(o => (o.items || []).forEach(i => { sales[i.name] = (sales[i.name] || 0) + (i.qty || 0); }));
+  const top = Object.entries(sales).sort((a, b) => b[1] - a[1])[0];
+  $('stat-top-product').textContent = top ? `${top[0]} (${top[1]})` : '-';
 
   const recent = orders.slice(0, 5);
-  domA.recentOrders.innerHTML = recent.length
-    ? recent.map(o => `<div class="recent-item"><span>Sifariş #${o.orderNumber}</span><span>${fmtPrice(o.total)}</span></div>`).join('')
+  $('recent-orders-list').innerHTML = recent.length
+    ? recent.map(o => `<div class="recent-item"><span>Sifariş #${o.orderNumber}</span><span>${fp(o.totalPrice || o.total)}</span></div>`).join('')
     : '<p class="muted">Heç bir sifariş yoxdur</p>';
 }
 
@@ -242,670 +168,440 @@ function updateStats() {
 // ============================================
 
 function renderProducts() {
-  const tbody = domA.productsTbody;
-  const empty = domA.productsEmpty;
-  const filter = domA.productCategoryFilter.value;
-  const search = domA.productSearch.value.toLowerCase();
-  const sort = domA.productSort.value;
+  const tbody = $('products-tbody');
+  const empty = $('products-empty');
+  const filter = $('product-category-filter').value;
+  const search = $('product-search').value.toLowerCase();
+  const sort = $('product-sort').value;
 
-  let filtered = [...adminState.products];
-  if (filter) filtered = filtered.filter(p => p.category === filter);
-  if (search) filtered = filtered.filter(p =>
-    (p.name || '').toLowerCase().includes(search) ||
-    (p.qrId || p.id || '').toLowerCase().includes(search)
-  );
+  let list = [...state.productsArr];
+  if (filter) list = list.filter(p => p.category === filter);
+  if (search) list = list.filter(p => (p.productName || p.name || '').toLowerCase().includes(search) || (p.qrCode || p.qrId || p.id || '').toLowerCase().includes(search));
+  if (sort === 'price') list.sort((a, b) => parseFloat(a.price || 0) - parseFloat(b.price || 0));
+  else if (sort === 'stock') list.sort((a, b) => parseInt(a.stock || 0) - parseInt(b.stock || 0));
+  else list.sort((a, b) => (a.productName || a.name || '').localeCompare(b.productName || b.name || ''));
 
-  if (sort === 'price') filtered.sort((a, b) => parseFloat(a.price || 0) - parseFloat(b.price || 0));
-  else if (sort === 'stock') filtered.sort((a, b) => parseInt(a.stock || 0) - parseInt(b.stock || 0));
-  else filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
-  if (!filtered.length) {
-    tbody.innerHTML = '';
-    empty.classList.remove('hidden');
-    return;
-  }
+  if (!list.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
   empty.classList.add('hidden');
 
-  tbody.innerHTML = filtered.map(p => `
-    <tr>
-      <td><input type="checkbox" class="product-checkbox" value="${p.id}" ${adminState.selectedProducts.has(p.id) ? 'checked' : ''} /></td>
-      <td>${p.image ? `<img src="${escHtml(p.image)}" alt="" />` : '<span style="color:var(--text-muted)">—</span>'}</td>
-      <td><code style="font-size:12px">${escHtml(p.qrId || p.id)}</code></td>
-      <td><strong>${escHtml(p.name)}</strong></td>
-      <td style="font-weight:600">${fmtPrice(p.price)}</td>
-      <td>${escHtml(p.category || '—')}</td>
+  tbody.innerHTML = list.map(p => {
+    const pid = p.id;
+    const name = p.productName || p.name || '';
+    const qr = p.qrCode || p.qrId || pid;
+    return `<tr>
+      <td><input type="checkbox" class="product-cb" value="${esc(pid)}" ${state.selectedProducts.has(pid) ? 'checked' : ''} /></td>
+      <td>${p.image ? `<img src="${esc(p.image)}" alt="" />` : '<span style="color:var(--text-muted)">—</span>'}</td>
+      <td><code style="font-size:12px">${esc(qr)}</code></td>
+      <td><strong>${esc(name)}</strong></td>
+      <td style="font-weight:600">${fp(p.price)}</td>
+      <td>${esc(p.category || '—')}</td>
       <td>${p.stock ?? '—'}</td>
       <td><span class="status-badge ${p.status || 'active'}">${p.status || 'active'}</span></td>
       <td>
-        <button class="btn btn-sm btn-outline" onclick="editProduct('${p.id}')">Düzəlt</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteProduct('${p.id}')">Sil</button>
-        <button class="btn btn-sm btn-outline" onclick="showPriceHistory('${p.id}')">Qiymət</button>
+        <button class="btn btn-sm btn-outline" onclick="editProduct('${esc(pid)}')">Düzəlt</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteProduct('${esc(pid)}')">Sil</button>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 
-  document.querySelectorAll('.product-checkbox').forEach(cb => {
+  document.querySelectorAll('.product-cb').forEach(cb => {
     cb.addEventListener('change', () => {
-      if (cb.checked) adminState.selectedProducts.add(cb.value);
-      else adminState.selectedProducts.delete(cb.value);
+      if (cb.checked) state.selectedProducts.add(cb.value);
+      else state.selectedProducts.delete(cb.value);
     });
   });
 }
 
 function updateCategoryFilter() {
-  const cats = [...new Set(adminState.products.map(p => p.category).filter(Boolean))];
-  domA.productCategoryFilter.innerHTML = '<option value="">Bütün kateqoriyalar</option>' +
-    cats.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('');
+  const cats = [...new Set(state.productsArr.map(p => p.category).filter(Boolean))];
+  $('product-category-filter').innerHTML = '<option value="">Bütün kateqoriyalar</option>' +
+    cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
 }
 
-domA.productSearch.addEventListener('input', renderProducts);
-domA.productCategoryFilter.addEventListener('change', renderProducts);
-domA.productSort.addEventListener('change', renderProducts);
+$('product-search').addEventListener('input', renderProducts);
+$('product-category-filter').addEventListener('change', renderProducts);
+$('product-sort').addEventListener('change', renderProducts);
 
-domA.selectAll.addEventListener('change', () => {
-  document.querySelectorAll('.product-checkbox').forEach(cb => {
-    cb.checked = domA.selectAll.checked;
-    if (domA.selectAll.checked) adminState.selectedProducts.add(cb.value);
-    else adminState.selectedProducts.delete(cb.value);
+$('select-all-products').addEventListener('change', function() {
+  document.querySelectorAll('.product-cb').forEach(cb => {
+    cb.checked = this.checked;
+    if (this.checked) state.selectedProducts.add(cb.value);
+    else state.selectedProducts.delete(cb.value);
   });
 });
 
-domA.addProductBtn.addEventListener('click', () => {
-  resetProductForm();
+$('add-product-btn').addEventListener('click', () => {
+  resetForm();
   document.querySelector('[data-page="qr-scanner"]').click();
 });
 
-domA.productForm.addEventListener('submit', async e => {
+$('product-form').addEventListener('submit', async e => {
   e.preventDefault();
-  if (!db) { showAdminToast('Firebase bağlantısı yoxdur', 'error'); return; }
+  if (!database) { toast('Firebase yoxdur', 'error'); return; }
+  const qrId = $('pf-qr-id').value.trim();
+  const name = $('pf-name').value.trim();
+  if (!qrId || !name) { toast('QR ID və Ad doldurulmalıdır', 'error'); return; }
 
   const data = {
-    qrId: domA.pfQrId.value.trim(),
-    name: domA.pfName.value.trim(),
-    price: parseFloat(domA.pfPrice.value) || 0,
-    stock: parseInt(domA.pfStock.value) || 0,
-    category: domA.pfCategory.value.trim(),
-    barcode: domA.pfBarcode.value.trim(),
-    note: domA.pfNote.value.trim(),
-    image: domA.pfImage.value.trim(),
-    status: domA.pfStatus.value,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    qrCode: qrId,
+    productName: name,
+    price: parseFloat($('pf-price').value) || 0,
+    stock: parseInt($('pf-stock').value) || 0,
+    category: $('pf-category').value.trim(),
+    barcode: $('pf-barcode').value.trim(),
+    note: $('pf-note').value.trim(),
+    image: $('pf-image').value.trim(),
+    status: $('pf-status').value,
+    updatedAt: now(),
+    updatedBy: 'admin'
   };
-  if (!data.qrId || !data.name) {
-    showAdminToast('QR ID və Ad doldurulmalıdır', 'error'); return;
-  }
+
   try {
-    if (adminState.editingProductId) {
-      await db.collection('products').doc(adminState.editingProductId).update(data);
-      const oldDoc = await db.collection('products').doc(adminState.editingProductId).get();
-      const oldPrice = oldDoc.data()?.price;
+    if (state.editingProductId) {
+      await database.ref(`products/${state.editingProductId}`).update(data);
+      // Price history
+      const oldSnap = await database.ref(`products/${state.editingProductId}/price`).once('value');
+      const oldPrice = oldSnap.val();
       if (oldPrice && parseFloat(oldPrice) !== data.price) {
-        await db.collection('priceHistory').add({
-          productId: adminState.editingProductId,
-          productName: data.name,
+        await database.ref('priceHistory').push({
+          productId: state.editingProductId,
+          productName: name,
           oldPrice: parseFloat(oldPrice),
           newPrice: data.price,
           changedBy: 'admin',
-          changedAt: firebase.firestore.FieldValue.serverTimestamp()
+          changedAt: now()
         });
       }
-      showAdminToast('Məhsul yeniləndi', 'success');
+      toast('Məhsul yeniləndi', 'success');
     } else {
-      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-      await db.collection('products').doc(data.qrId).set(data);
-      showAdminToast('Məhsul yaradıldı', 'success');
+      data.createdAt = now();
+      data.createdBy = 'admin';
+      await database.ref(`products/${qrId}`).set(data);
+      toast('Məhsul yaradıldı', 'success');
     }
-    resetProductForm();
+    resetForm();
   } catch (err) {
-    showAdminToast('Xəta: ' + err.message, 'error');
+    toast('Xəta: ' + err.message, 'error');
   }
 });
 
 function editProduct(id) {
-  const p = adminState.products.find(x => x.id === id);
+  const p = state.products[id];
   if (!p) return;
-  adminState.editingProductId = id;
-  domA.pfQrId.value = p.qrId || p.id;
-  domA.pfName.value = p.name || '';
-  domA.pfPrice.value = p.price || '';
-  domA.pfStock.value = p.stock || 0;
-  domA.pfCategory.value = p.category || '';
-  domA.pfBarcode.value = p.barcode || '';
-  domA.pfNote.value = p.note || '';
-  domA.pfImage.value = p.image || '';
-  domA.pfStatus.value = p.status || 'active';
-  domA.pfSubmit.textContent = 'Yenilə';
-  domA.pfDelete.classList.remove('hidden');
+  state.editingProductId = id;
+  $('pf-qr-id').value = p.qrCode || p.qrId || id;
+  $('pf-name').value = p.productName || p.name || '';
+  $('pf-price').value = p.price || '';
+  $('pf-stock').value = p.stock || 0;
+  $('pf-category').value = p.category || '';
+  $('pf-barcode').value = p.barcode || '';
+  $('pf-note').value = p.note || '';
+  $('pf-image').value = p.image || '';
+  $('pf-status').value = p.status || 'active';
+  $('pf-submit').textContent = 'Yenilə';
+  $('pf-delete').classList.remove('hidden');
   document.querySelector('[data-page="qr-scanner"]').click();
 }
 
-function resetProductForm() {
-  adminState.editingProductId = null;
-  domA.productForm.reset();
-  domA.pfSubmit.textContent = 'Yadda saxla';
-  domA.pfDelete.classList.add('hidden');
+function resetForm() {
+  state.editingProductId = null;
+  $('product-form').reset();
+  $('pf-submit').textContent = 'Yadda saxla';
+  $('pf-delete').classList.add('hidden');
 }
-
-domA.pfCancel.addEventListener('click', resetProductForm);
+$('pf-cancel').addEventListener('click', resetForm);
 
 async function deleteProduct(id) {
-  if (!db) return;
-  if (!confirm('Məhsulu silmək istədiyinizə əminsiniz?')) return;
+  if (!database || !confirm('Məhsulu silmək istəyirsiniz?')) return;
   try {
-    await db.collection('products').doc(id).delete();
-    showAdminToast('Məhsul silindi', 'success');
-    resetProductForm();
-  } catch (err) {
-    showAdminToast('Xəta: ' + err.message, 'error');
-  }
+    await database.ref(`products/${id}`).remove();
+    toast('Məhsul silindi', 'success');
+    resetForm();
+  } catch (err) { toast('Xəta: ' + err.message, 'error'); }
 }
+$('pf-delete').addEventListener('click', () => { if (state.editingProductId) deleteProduct(state.editingProductId); });
 
-domA.pfDelete.addEventListener('click', () => {
-  if (adminState.editingProductId) deleteProduct(adminState.editingProductId);
-});
-
-domA.bulkDeleteBtn.addEventListener('click', async () => {
-  if (!db) return;
-  if (!adminState.selectedProducts.size) {
-    showAdminToast('Heç bir məhsul seçilməyib', 'warning'); return;
-  }
-  if (!confirm(`${adminState.selectedProducts.size} məhsulu silmək istəyirsiniz?`)) return;
-  const batch = db.batch();
-  adminState.selectedProducts.forEach(id => batch.delete(db.collection('products').doc(id)));
-  await batch.commit();
-  adminState.selectedProducts.clear();
-  showAdminToast('Məhsullar silindi', 'success');
+$('bulk-delete-btn').addEventListener('click', async () => {
+  if (!state.selectedProducts.size) { toast('Heç bir məhsul seçilməyib', 'warning'); return; }
+  if (!confirm(`${state.selectedProducts.size} məhsulu silmək istəyirsiniz?`)) return;
+  const updates = {};
+  state.selectedProducts.forEach(id => { updates[`products/${id}`] = null; });
+  await database.ref().update(updates);
+  state.selectedProducts.clear();
+  toast('Məhsullar silindi', 'success');
 });
 
 // ============================================
-// PRICE HISTORY
+// EXPORT / IMPORT
 // ============================================
 
-async function showPriceHistory(productId) {
-  if (!db) { showAdminToast('Firebase yoxdur', 'error'); return; }
-  domA.priceHistoryBody.innerHTML = '<p class="muted">Yüklənir...</p>';
-  domA.priceHistoryModal.classList.remove('hidden');
-  try {
-    const snapshot = await db.collection('priceHistory')
-      .where('productId', '==', productId)
-      .orderBy('changedAt', 'desc').limit(50).get();
-    if (snapshot.empty) {
-      domA.priceHistoryBody.innerHTML = '<p class="muted">Heç bir dəyişiklik yoxdur</p>'; return;
-    }
-    domA.priceHistoryBody.innerHTML = snapshot.docs.map(d => {
-      const h = d.data();
-      return `<div class="recent-item">
-        <span>${fmtPrice(h.oldPrice)} → ${fmtPrice(h.newPrice)}</span>
-        <span style="font-size:12px;color:var(--text-muted)">${h.changedBy || 'admin'} • ${h.changedAt?.toDate ? fmtDate(h.changedAt.toDate()) : ''}</span>
-      </div>`;
-    }).join('');
-  } catch (err) {
-    domA.priceHistoryBody.innerHTML = '<p class="muted">Xəta baş verdi</p>';
-  }
-}
-
-domA.priceHistoryClose.addEventListener('click', () => domA.priceHistoryModal.classList.add('hidden'));
-domA.priceHistoryModal.querySelector('.modal-backdrop')?.addEventListener('click', () => domA.priceHistoryModal.classList.add('hidden'));
-
-// ============================================
-// EXPORT / IMPORT PRODUCTS
-// ============================================
-
-domA.exportCsv.addEventListener('click', () => {
-  const headers = ['qrId', 'name', 'price', 'category', 'stock', 'barcode', 'status'];
-  const rows = adminState.products.map(p => [
-    p.qrId || p.id, p.name, p.price, p.category || '', p.stock || '', p.barcode || '', p.status || 'active'
-  ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
-  downloadCSV([headers.join(','), ...rows].join('\n'), 'products.csv');
+$('export-csv').addEventListener('click', () => {
+  const h = ['qrCode', 'productName', 'price', 'category', 'stock', 'barcode', 'status'];
+  const r = state.productsArr.map(p => [p.qrCode || p.id, p.productName || p.name, p.price, p.category || '', p.stock || '', p.barcode || '', p.status || 'active'].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+  downloadCSV([h.join(','), ...r].join('\n'), 'products.csv');
 });
-
-domA.exportExcel.addEventListener('click', () => {
-  const headers = ['QR ID', 'Ad', 'Qiymət', 'Kateqoriya', 'Stok', 'Barcode', 'Status'];
-  const rows = adminState.products.map(p => [
-    p.qrId || p.id, p.name, p.price, p.category || '', p.stock || '', p.barcode || '', p.status || 'active'
-  ].join(','));
-  downloadCSV('\uFEFF' + [headers.join(','), ...rows].join('\n'), 'products.xlsx');
+$('export-excel').addEventListener('click', () => {
+  const r = state.productsArr.map(p => [p.qrCode || p.id, p.productName || p.name, p.price, p.category || '', p.stock || '', p.barcode || '', p.status || 'active'].join(','));
+  downloadCSV('\uFEFFqrCode,productName,price,category,stock,barcode,status\n' + r.join('\n'), 'products.xlsx');
 });
-
-domA.exportPdf.addEventListener('click', () => {
-  const win = window.open('', '_blank');
-  const rows = adminState.products.map(p =>
-    `<tr><td>${escHtml(p.qrId || p.id)}</td><td>${escHtml(p.name)}</td><td>${fmtPrice(p.price)}</td><td>${escHtml(p.category || '')}</td><td>${p.stock || 0}</td></tr>`
-  ).join('');
-  win.document.write(`
-    <html><head><title>GASHAM - Məhsullar</title>
-    <style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}
-    td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f7}
-    h2{text-align:center;margin-bottom:20px;color:#1d1d1f}</style>
-    </head><body>
-    <h2>GASHAM - Məhsul Siyahısı</h2>
-    <p style="text-align:right;color:#666">${new Date().toLocaleDateString('az-AZ')}</p>
-    <table><thead><tr><th>QR ID</th><th>Ad</th><th>Qiymət</th><th>Kateqoriya</th><th>Stok</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
-  win.document.close();
+$('export-pdf').addEventListener('click', () => {
+  const rows = state.productsArr.map(p => `<tr><td>${esc(p.qrCode || p.id)}</td><td>${esc(p.productName || p.name)}</td><td>${fp(p.price)}</td><td>${esc(p.category || '')}</td><td>${p.stock || 0}</td></tr>`).join('');
+  const w = window.open('', '_blank');
+  w.document.write(`<html><head><title>GASHAM - Məhsullar</title><style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f7}h2{text-align:center}</style></head><body><h2>GASHAM - Məhsul Siyahısı</h2><table><thead><tr><th>QR ID</th><th>Ad</th><th>Qiymət</th><th>Kateqoriya</th><th>Stok</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
+  w.document.close();
 });
+function downloadCSV(c, f) { const b = new Blob([c], {type:'text/csv'}); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = f; a.click(); URL.revokeObjectURL(a.href); }
 
-function downloadCSV(content, filename) {
-  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(link.href);
-}
-
-domA.importBtn.addEventListener('click', () => domA.importModal.classList.remove('hidden'));
-domA.importClose.addEventListener('click', () => domA.importModal.classList.add('hidden'));
-domA.importModal.querySelector('.modal-backdrop')?.addEventListener('click', () => domA.importModal.classList.add('hidden'));
-
-domA.importExecute.addEventListener('click', async () => {
-  if (!db) { showAdminToast('Firebase yoxdur', 'error'); return; }
-  const file = domA.importFile.files[0];
-  if (!file) { showAdminToast('Fayl seçin', 'warning'); return; }
+$('import-btn').addEventListener('click', () => $('import-modal').classList.remove('hidden'));
+$('import-modal-close').addEventListener('click', () => $('import-modal').classList.add('hidden'));
+$('import-modal').querySelector('.modal-backdrop')?.addEventListener('click', () => $('import-modal').classList.add('hidden'));
+$('import-execute').addEventListener('click', async () => {
+  if (!database) { toast('Firebase yoxdur', 'error'); return; }
+  const file = $('import-file').files[0];
+  if (!file) { toast('Fayl seçin', 'warning'); return; }
   const text = await file.text();
   const lines = text.split('\n').filter(l => l.trim());
-  if (lines.length < 2) { showAdminToast('Fayl boşdur', 'error'); return; }
+  if (lines.length < 2) { toast('Fayl boşdur', 'error'); return; }
   const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
   let imported = 0;
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+    const vals = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
     const data = {};
-    headers.forEach((h, idx) => { data[h] = values[idx] || ''; });
-    if (data.qrId && data.name) {
+    headers.forEach((h, idx) => { data[h] = vals[idx] || ''; });
+    if (data.qrCode && data.productName) {
       data.price = parseFloat(data.price) || 0;
       data.stock = parseInt(data.stock) || 0;
-      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-      data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
-      await db.collection('products').doc(data.qrId).set(data, { merge: true });
+      data.createdAt = now();
+      data.updatedAt = now();
+      await database.ref(`products/${data.qrCode}`).set(data);
       imported++;
     }
   }
-  showAdminToast(`${imported} məhsul import edildi`, 'success');
-  domA.importModal.classList.add('hidden');
+  toast(`${imported} məhsul import edildi`, 'success');
+  $('import-modal').classList.add('hidden');
 });
 
 // ============================================
-// ORDERS TABLE
+// ORDERS
 // ============================================
 
 function renderOrdersTable() {
-  const tbody = domA.ordersTbody;
-  const search = domA.orderSearch?.value?.toLowerCase() || '';
-  const dateFilter = domA.orderDateFilter?.value || '';
-  const statusFilter = domA.orderStatusFilter?.value || '';
+  const tbody = $('orders-tbody');
+  const search = ($('order-search')?.value || '').toLowerCase();
+  const dateFilter = $('order-date-filter')?.value || '';
+  const statusFilter = $('order-status-filter')?.value || '';
 
-  let filtered = [...adminState.orders];
+  let list = [...state.ordersArr];
+  if (search) list = list.filter(o => String(o.orderNumber).includes(search));
+  if (statusFilter) list = list.filter(o => o.status === statusFilter);
+  if (dateFilter) list = list.filter(o => (o.createdAt || '').startsWith(dateFilter));
 
-  if (search) filtered = filtered.filter(o => String(o.orderNumber).includes(search));
-  if (statusFilter) filtered = filtered.filter(o => o.status === statusFilter);
-  if (dateFilter) {
-    filtered = filtered.filter(o => {
-      const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
-      return d.toISOString().split('T')[0] === dateFilter;
-    });
-  }
-
-  if (!filtered.length) {
+  if (!list.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">Heç bir sifariş yoxdur</td></tr>';
     return;
   }
 
-  tbody.innerHTML = filtered.map(o => {
+  tbody.innerHTML = list.map(o => {
     const itemsCount = (o.items || []).reduce((s, i) => s + (i.qty || 0), 0);
-    const date = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
-    const statusClass = o.status === 'Təsdiqlənib' || o.status === 'completed' ? 'completed' : 'active';
+    const statusClass = o.status === 'Təsdiqlənib' || o.status === 'completed' ? 'Təsdiqlənib' : 'active';
     return `<tr>
       <td><strong>#${o.orderNumber}</strong></td>
-      <td>${fmtDate(date)}</td>
-      <td>${fmtTime(date)}</td>
+      <td>${fd(o.createdAt)}</td>
+      <td>${ft(o.createdAt)}</td>
       <td>${itemsCount}</td>
-      <td style="font-weight:600">${fmtPrice(o.total)}</td>
+      <td style="font-weight:600">${fp(o.totalPrice || o.total)}</td>
       <td><span class="status-badge ${statusClass}">${o.status || 'active'}</span></td>
       <td>
-        <button class="btn btn-sm btn-outline" onclick="openOrderDetail('${o.id}')">Aç</button>
-        <button class="btn btn-sm btn-outline" onclick="quickPrintOrder('${o.id}')">Çap</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteOrder('${o.id}')">Sil</button>
+        <button class="btn btn-sm btn-outline" onclick="openOrder('${esc(o.id)}')">Aç</button>
+        <button class="btn btn-sm btn-outline" onclick="printOrder('${esc(o.id)}')">Çap</button>
+        <button class="btn btn-sm btn-danger" onclick="delOrder('${esc(o.id)}')">Sil</button>
       </td>
     </tr>`;
   }).join('');
 }
 
-domA.orderSearch?.addEventListener('input', renderOrdersTable);
-domA.orderDateFilter?.addEventListener('change', renderOrdersTable);
-domA.orderStatusFilter?.addEventListener('change', renderOrdersTable);
+$('order-search')?.addEventListener('input', renderOrdersTable);
+$('order-date-filter')?.addEventListener('change', renderOrdersTable);
+$('order-status-filter')?.addEventListener('change', renderOrdersTable);
 
-// ============================================
-// ORDER DETAIL (Full Edit)
-// ============================================
+// Order detail
+async function openOrder(id) {
+  const o = state.orders[id];
+  if (!o) return;
+  state.editingOrderId = id;
+  state.editingOrderItems = JSON.parse(JSON.stringify(o.items || []));
 
-async function openOrderDetail(orderId) {
-  const order = adminState.orders.find(o => o.id === orderId);
-  if (!order) return;
-
-  adminState.editingOrderId = orderId;
-  adminState.editingOrderItems = JSON.parse(JSON.stringify(order.items || []));
-
-  domA.orderDetailTitle.textContent = `Sifariş #${order.orderNumber}`;
-  renderOrderDetailItems();
-  domA.orderDetailFooter.classList.remove('hidden');
-  domA.orderDetailModal.classList.remove('hidden');
+  $('order-detail-title').textContent = `Sifariş #${o.orderNumber}`;
+  renderOrderItems();
+  $('order-detail-footer').classList.remove('hidden');
+  $('order-detail-modal').classList.remove('hidden');
 }
 
-function renderOrderDetailItems() {
-  const body = domA.orderDetailBody;
-  const items = adminState.editingOrderItems;
+function renderOrderItems() {
+  const items = state.editingOrderItems;
+  const o = state.orders[state.editingOrderId];
+  if (!items.length) { $('order-detail-body').innerHTML = '<p class="muted" style="text-align:center;padding:20px">Sifariş boşdur</p>'; return; }
 
-  if (!items.length) {
-    body.innerHTML = '<p class="muted" style="text-align:center;padding:20px">Sifariş boşdur</p>';
-    return;
-  }
-
-  const order = adminState.orders.find(o => o.id === adminState.editingOrderId);
-  const dateStr = order ? (() => {
-    const d = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
-    return `${fmtDate(d)} ${fmtTime(d)}`;
-  })() : '';
-
-  body.innerHTML = `
-    <div class="review-meta" style="margin-bottom:12px">
-      <span style="font-size:14px;color:var(--text-secondary)">${dateStr}</span>
-      <span style="margin-left:12px" class="status-badge ${order?.status === 'Təsdiqlənib' ? 'completed' : 'active'}">${order?.status || 'active'}</span>
-    </div>
+  $('order-detail-body').innerHTML = `
+    <div style="margin-bottom:12px;font-size:14px;color:var(--text-secondary)">${fd(o?.createdAt)} ${ft(o?.createdAt)} <span class="status-badge ${o?.status === 'Təsdiqlənib' ? 'Təsdiqlənib' : 'active'}" style="margin-left:8px">${o?.status || 'active'}</span></div>
     ${items.map((item, idx) => `
       <div class="order-edit-item">
-        <span class="item-name">${escHtml(item.name)}</span>
-        <span style="font-size:12px;color:var(--text-muted);min-width:60px">${fmtPrice(item.price)}</span>
-        <button class="btn-qty" onclick="editItemQty(${idx}, -1)">−</button>
-        <input type="number" value="${item.qty}" min="0" class="item-qty-input" onchange="editItemQtySet(${idx}, this.value)" />
-        <button class="btn-qty" onclick="editItemQty(${idx}, 1)">+</button>
-        <input type="number" value="${item.price}" step="0.01" class="item-price-input" onchange="editItemPrice(${idx}, this.value)" />
-        <span style="font-weight:700;color:var(--accent);min-width:70px;text-align:right">${fmtPrice(item.price * item.qty)}</span>
-        <button class="btn-remove-item" onclick="editRemoveItem(${idx})">&times;</button>
+        <span class="item-name">${esc(item.name)}</span>
+        <span style="font-size:12px;color:var(--text-muted);min-width:55px">${fp(item.price)}</span>
+        <button class="btn-qty" onclick="oiQty(${idx},-1)">−</button>
+        <input type="number" value="${item.qty}" min="0" class="item-qty-input" onchange="oiQtySet(${idx},this.value)" />
+        <button class="btn-qty" onclick="oiQty(${idx},1)">+</button>
+        <input type="number" value="${item.price}" step="0.01" class="item-price-input" onchange="oiPrice(${idx},this.value)" />
+        <span style="font-weight:700;color:var(--accent);min-width:65px;text-align:right">${fp(item.price * item.qty)}</span>
+        <button class="btn-remove-item" onclick="oiRemove(${idx})">&times;</button>
       </div>
     `).join('')}
-    <div class="order-edit-total">
-      Cəmi: ${fmtPrice(items.reduce((s, i) => s + i.price * i.qty, 0))}
-    </div>
-  `;
+    <div class="order-edit-total">Cəmi: ${fp(items.reduce((s,i) => s + i.price * i.qty, 0))}</div>`;
 }
 
-function editItemQty(idx, delta) {
-  if (!adminState.editingOrderItems[idx]) return;
-  adminState.editingOrderItems[idx].qty = Math.max(0, (adminState.editingOrderItems[idx].qty || 1) + delta);
-  if (adminState.editingOrderItems[idx].qty === 0) {
-    adminState.editingOrderItems.splice(idx, 1);
-  }
-  renderOrderDetailItems();
-}
+function oiQty(idx, d) { if (state.editingOrderItems[idx]) { state.editingOrderItems[idx].qty = Math.max(0, (state.editingOrderItems[idx].qty||1)+d); if (!state.editingOrderItems[idx].qty) state.editingOrderItems.splice(idx,1); renderOrderItems(); } }
+function oiQtySet(idx, v) { if (state.editingOrderItems[idx]) { state.editingOrderItems[idx].qty = Math.max(0, parseInt(v)||0); if (!state.editingOrderItems[idx].qty) state.editingOrderItems.splice(idx,1); renderOrderItems(); } }
+function oiPrice(idx, v) { if (state.editingOrderItems[idx]) { state.editingOrderItems[idx].price = parseFloat(v)||0; renderOrderItems(); } }
+function oiRemove(idx) { state.editingOrderItems.splice(idx,1); renderOrderItems(); }
 
-function editItemQtySet(idx, val) {
-  if (!adminState.editingOrderItems[idx]) return;
-  adminState.editingOrderItems[idx].qty = Math.max(0, parseInt(val) || 0);
-  if (adminState.editingOrderItems[idx].qty === 0) {
-    adminState.editingOrderItems.splice(idx, 1);
-  }
-  renderOrderDetailItems();
-}
-
-function editItemPrice(idx, val) {
-  if (!adminState.editingOrderItems[idx]) return;
-  adminState.editingOrderItems[idx].price = parseFloat(val) || 0;
-  renderOrderDetailItems();
-}
-
-function editRemoveItem(idx) {
-  adminState.editingOrderItems.splice(idx, 1);
-  renderOrderDetailItems();
-}
-
-domA.orderSaveChanges.addEventListener('click', async () => {
-  if (!adminState.editingOrderId || !db) return;
-  const total = adminState.editingOrderItems.reduce((s, i) => s + i.price * i.qty, 0);
+$('order-save-changes').addEventListener('click', async () => {
+  if (!state.editingOrderId || !database) return;
+  const total = state.editingOrderItems.reduce((s,i) => s + i.price * i.qty, 0);
   try {
-    await db.collection('orders').doc(adminState.editingOrderId).update({
-      items: adminState.editingOrderItems,
-      total: total,
-      itemCount: adminState.editingOrderItems.reduce((s, i) => s + i.qty, 0),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    await database.ref(`orders/${state.editingOrderId}`).update({
+      items: state.editingOrderItems,
+      totalPrice: total,
+      totalItems: state.editingOrderItems.reduce((s,i) => s + i.qty, 0),
+      updatedAt: now()
     });
-    showAdminToast('Sifariş yeniləndi', 'success');
-    domA.orderDetailModal.classList.add('hidden');
-  } catch (err) {
-    showAdminToast('Xəta: ' + err.message, 'error');
-  }
+    toast('Sifariş yeniləndi', 'success');
+    $('order-detail-modal').classList.add('hidden');
+  } catch (err) { toast('Xəta: ' + err.message, 'error'); }
 });
 
-domA.orderDeleteFull.addEventListener('click', async () => {
-  if (!adminState.editingOrderId || !db) return;
-  if (!confirm('Sifarişi tamamilə silmək istəyirsiniz?')) return;
-  try {
-    await db.collection('orders').doc(adminState.editingOrderId).delete();
-    showAdminToast('Sifariş silindi', 'success');
-    domA.orderDetailModal.classList.add('hidden');
-  } catch (err) {
-    showAdminToast('Xəta: ' + err.message, 'error');
-  }
+$('order-delete-full').addEventListener('click', async () => {
+  if (!state.editingOrderId || !database || !confirm('Sifarişi silmək istəyirsiniz?')) return;
+  try { await database.ref(`orders/${state.editingOrderId}`).remove(); toast('Sifariş silindi', 'success'); $('order-detail-modal').classList.add('hidden'); }
+  catch (err) { toast('Xəta: ' + err.message, 'error'); }
 });
 
-domA.orderDetailClose.addEventListener('click', () => domA.orderDetailModal.classList.add('hidden'));
-domA.orderDetailModal.querySelector('.modal-backdrop')?.addEventListener('click', () => domA.orderDetailModal.classList.add('hidden'));
+$('order-detail-close').addEventListener('click', () => $('order-detail-modal').classList.add('hidden'));
+$('order-detail-modal').querySelector('.modal-backdrop')?.addEventListener('click', () => $('order-detail-modal').classList.add('hidden'));
 
-// ============================================
-// QUICK ORDER ACTIONS
-// ============================================
-
-async function deleteOrder(orderId) {
-  if (!db) return;
-  if (!confirm('Sifarişi silmək istədiyinizə əminsiniz?')) return;
-  try {
-    await db.collection('orders').doc(orderId).delete();
-    showAdminToast('Sifariş silindi', 'success');
-  } catch (err) {
-    showAdminToast('Xəta: ' + err.message, 'error');
-  }
+async function delOrder(id) {
+  if (!database || !confirm('Sifarişi silmək istəyirsiniz?')) return;
+  try { await database.ref(`orders/${id}`).remove(); toast('Sifariş silindi', 'success'); }
+  catch (err) { toast('Xəta: ' + err.message, 'error'); }
 }
 
-function quickPrintOrder(orderId) {
-  const order = adminState.orders.find(o => o.id === orderId);
-  if (!order) return;
-  const win = window.open('', '_blank');
-  const items = (order.items || []).map(i =>
-    `<tr><td>${escHtml(i.name)}</td><td>${i.qty}</td><td>${fmtPrice(i.price)}</td><td>${fmtPrice(i.price * i.qty)}</td></tr>`
-  ).join('');
-  const date = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
-  win.document.write(`
-    <html><head><title>Sifariş #${order.orderNumber}</title>
-    <style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}
-    td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f5}
-    h2{text-align:center;color:#1d1d1f}</style></head><body>
-    <h2>GASHAM - Sifariş #${order.orderNumber}</h2>
-    <p>Tarix: ${fmtDate(date)} ${fmtTime(date)} | Status: ${order.status}</p>
-    <table><thead><tr><th>Məhsul</th><th>Say</th><th>Qiymət</th><th>Cəm</th></tr></thead><tbody>${items}</tbody></table>
-    <h3 style="text-align:right">Cəmi: ${fmtPrice(order.total || 0)}</h3></body></html>`);
-  win.document.close();
+function printOrder(id) {
+  const o = state.orders[id]; if (!o) return;
+  const items = (o.items||[]).map(i => `<tr><td>${esc(i.name)}</td><td>${i.qty}</td><td>${fp(i.price)}</td><td>${fp(i.price*i.qty)}</td></tr>`).join('');
+  const w = window.open('', '_blank');
+  w.document.write(`<html><head><title>Sifariş #${o.orderNumber}</title><style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f5}h2{text-align:center}</style></head><body><h2>GASHAM</h2><p>Sifariş #${o.orderNumber} | ${fd(o.createdAt)} ${ft(o.createdAt)} | Status: ${o.status}</p><table><thead><tr><th>Məhsul</th><th>Say</th><th>Qiymət</th><th>Cəm</th></tr></thead><tbody>${items}</tbody></table><h3 style="text-align:right">Cəmi: ${fp(o.totalPrice || o.total)}</h3></body></html>`);
+  w.document.close();
 }
 
-// ============================================
-// ORDERS EXPORT
-// ============================================
-
-domA.ordersExportCsv?.addEventListener('click', () => {
-  const headers = ['Sifariş #', 'Tarix', 'Saat', 'Məhsul Sayı', 'Cəmi', 'Status'];
-  const rows = adminState.orders.map(o => {
-    const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
-    return [o.orderNumber, fmtDate(d), fmtTime(d),
-      (o.items || []).reduce((s, i) => s + i.qty, 0),
-      (o.total || 0).toFixed(2), o.status || 'active'
-    ].join(',');
-  });
-  downloadCSV('\uFEFF' + [headers.join(','), ...rows].join('\n'), 'orders.csv');
+// Orders export
+$('orders-export-csv')?.addEventListener('click', () => {
+  const r = state.ordersArr.map(o => [o.orderNumber, fd(o.createdAt), ft(o.createdAt), (o.items||[]).reduce((s,i) => s + i.qty, 0), (o.totalPrice||o.total||0).toFixed(2), o.status||'active'].join(','));
+  downloadCSV('\uFEFFSifariş #,Tarix,Saat,Say,Cəmi,Status\n' + r.join('\n'), 'orders.csv');
 });
-
-domA.ordersExportExcel?.addEventListener('click', () => {
-  downloadCSV('\uFEFF' + [
-    ['Sifariş #', 'Tarix', 'Saat', 'Məhsul Sayı', 'Cəmi', 'Status'].join(','),
-    ...adminState.orders.map(o => {
-      const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
-      return [o.orderNumber, fmtDate(d), fmtTime(d),
-        (o.items || []).reduce((s, i) => s + i.qty, 0),
-        (o.total || 0).toFixed(2), o.status || 'active'
-      ].join(',');
-    })
-  ].join('\n'), 'orders.xlsx');
+$('orders-export-excel')?.addEventListener('click', () => {
+  const r = state.ordersArr.map(o => [o.orderNumber, fd(o.createdAt), ft(o.createdAt), (o.items||[]).reduce((s,i) => s + i.qty, 0), (o.totalPrice||o.total||0).toFixed(2), o.status||'active'].join(','));
+  downloadCSV('\uFEFFSifariş #,Tarix,Saat,Say,Cəmi,Status\n' + r.join('\n'), 'orders.xlsx');
 });
-
-domA.ordersExportPdf?.addEventListener('click', () => {
-  const win = window.open('', '_blank');
-  const rows = adminState.orders.map(o => {
-    const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
-    return `<tr><td>#${o.orderNumber}</td><td>${fmtDate(d)}</td><td>${fmtTime(d)}</td>
-      <td>${(o.items || []).reduce((s, i) => s + i.qty, 0)}</td>
-      <td>${fmtPrice(o.total)}</td><td>${o.status || 'active'}</td></tr>`;
-  }).join('');
-  win.document.write(`
-    <html><head><title>GASHAM - Sifarişlər</title>
-    <style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}
-    td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f7}
-    h2{text-align:center;color:#1d1d1f}</style></head><body>
-    <h2>GASHAM - Bütün Sifarişlər</h2>
-    <p style="text-align:right;color:#666">${new Date().toLocaleDateString('az-AZ')}</p>
-    <table><thead><tr><th>#</th><th>Tarix</th><td>Saat</td><th>Say</th><th>Cəmi</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
-  win.document.close();
+$('orders-export-pdf')?.addEventListener('click', () => {
+  const rows = state.ordersArr.map(o => `<tr><td>#${o.orderNumber}</td><td>${fd(o.createdAt)}</td><td>${ft(o.createdAt)}</td><td>${(o.items||[]).reduce((s,i) => s + i.qty, 0)}</td><td>${fp(o.totalPrice||o.total)}</td><td>${o.status||'active'}</td></tr>`).join('');
+  const w = window.open('', '_blank');
+  w.document.write(`<html><head><title>GASHAM - Sifarişlər</title><style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f7}h2{text-align:center}</style></head><body><h2>GASHAM - Bütün Sifarişlər</h2><table><thead><tr><th>#</th><th>Tarix</th><td>Saat</td><th>Say</th><th>Cəmi</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
+  w.document.close();
 });
-
-domA.ordersPrint?.addEventListener('click', () => {
-  const allOrders = adminState.orders.slice(0, 50);
-  const rows = allOrders.map(o => {
-    const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
-    return `<tr><td>#${o.orderNumber}</td><td>${fmtDate(d)} ${fmtTime(d)}</td>
-      <td>${(o.items || []).reduce((s, i) => s + i.qty, 0)}</td>
-      <td>${fmtPrice(o.total)}</td></tr>`;
-  }).join('');
-  const win = window.open('', '_blank');
-  win.document.write(`
-    <html><head><title>GASHAM - Çap</title>
-    <style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}
-    td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f7}
-    h2{text-align:center;color:#1d1d1f}</style></head>
-    <body><h2>GASHAM - Sifarişlər</h2>
-    <table><thead><tr><th>#</th><th>Tarix</th><th>Say</th><th>Cəmi</th></tr></thead><tbody>${rows}</tbody></table>
-    <p style="text-align:right;color:#666">${new Date().toLocaleDateString('az-AZ')}</p></body></html>`);
-  win.document.close();
+$('orders-print')?.addEventListener('click', () => {
+  const rows = state.ordersArr.slice(0, 50).map(o => `<tr><td>#${o.orderNumber}</td><td>${fd(o.createdAt)} ${ft(o.createdAt)}</td><td>${(o.items||[]).reduce((s,i) => s + i.qty, 0)}</td><td>${fp(o.totalPrice||o.total)}</td></tr>`).join('');
+  const w = window.open('', '_blank');
+  w.document.write(`<html><head><title>GASHAM - Çap</title><style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f7}h2{text-align:center}</style></head><body><h2>GASHAM</h2><table><thead><tr><th>#</th><th>Tarix</th><th>Say</th><th>Cəmi</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
+  w.document.close();
 });
 
 // ============================================
-// ADMIN QR SCANNER (html5-qrcode)
+// QR SCANNER
 // ============================================
 
-domA.adminStartScanner.addEventListener('click', async () => {
-  if (adminState.scannerRunning) {
-    stopAdminScanner();
-    return;
-  }
+let adminScanner = null;
+let adminScanning = false;
+
+$('admin-start-scanner').addEventListener('click', async () => {
+  if (adminScanning) { stopAdminScan(); return; }
   try {
-    adminState.scanner = new Html5Qrcode('admin-scanner-element');
-    await adminState.scanner.start(
-      { facingMode: 'environment' },
-      { fps: 30, qrbox: { width: 240, height: 240 } },
-      onAdminScanSuccess,
-      () => {}
-    );
-    adminState.scannerRunning = true;
-    domA.adminStartScanner.textContent = 'Kameranı bağla';
-  } catch (err) {
-    showAdminToast('Kamera açılmadı: ' + err.message, 'error');
-  }
+    adminScanner = new Html5Qrcode('admin-scanner-element');
+    await adminScanner.start({ facingMode: 'environment' }, { fps: 30, qrbox: { width: 240, height: 240 } }, text => {
+      stopAdminScan();
+      const qrId = text.trim();
+      $('pf-qr-id').value = qrId;
+      const existing = state.productsArr.find(p => (p.qrCode || p.qrId || p.id) === qrId);
+      if (existing) { editProduct(existing.id); toast('Mövcud məhsul: ' + (existing.productName || existing.name), 'info'); }
+      else { resetForm(); $('pf-qr-id').value = qrId; $('pf-name').focus(); toast('QR oxundu', 'success'); }
+      if (navigator.vibrate) navigator.vibrate(100);
+    }, () => {});
+    adminScanning = true;
+    $('admin-start-scanner').textContent = 'Kameranı bağla';
+  } catch (err) { toast('Kamera xətası: ' + err.message, 'error'); }
 });
 
-function onAdminScanSuccess(decodedText) {
-  if (!adminState.scannerRunning) return;
-  stopAdminScanner();
-  const qrId = decodedText.trim();
-  domA.pfQrId.value = qrId;
-  const existing = adminState.products.find(p => (p.qrId || p.id) === qrId);
-  if (existing) {
-    editProduct(existing.id);
-    showAdminToast('Mövcud məhsul tapıldı: ' + existing.name, 'info');
-  } else {
-    resetProductForm();
-    domA.pfQrId.value = qrId;
-    domA.pfName.focus();
-    showAdminToast('QR oxundu', 'success');
-  }
-  if (navigator.vibrate) navigator.vibrate(100);
+function stopAdminScan() {
+  adminScanning = false;
+  if (adminScanner) { try { adminScanner.stop(); adminScanner.clear(); } catch(e) {} adminScanner = null; }
+  $('admin-start-scanner').textContent = 'Kameranı aç';
 }
 
-function stopAdminScanner() {
-  adminState.scannerRunning = false;
-  if (adminState.scanner) {
-    try { adminState.scanner.stop(); adminState.scanner.clear(); } catch (e) {}
-    adminState.scanner = null;
-  }
-  domA.adminStartScanner.textContent = 'Kameranı aç';
-}
-
-domA.adminFlashToggle.addEventListener('click', async () => {
-  const video = document.querySelector('#admin-scanner-element video');
-  if (!video) return;
-  const track = video.srcObject?.getVideoTracks()[0];
-  if (!track) return;
-  const caps = track.getCapabilities();
-  if (!caps.torch) { showAdminToast('Flash dəstəklənmir', 'warning'); return; }
-  adminState.flashOn = !adminState.flashOn;
-  await track.applyConstraints({ advanced: [{ torch: adminState.flashOn }] });
-  domA.adminFlashToggle.style.color = adminState.flashOn ? '#ff0' : '';
+$('admin-flash-toggle').addEventListener('click', async () => {
+  const v = document.querySelector('#admin-scanner-element video');
+  if (!v) return;
+  const t = v.srcObject?.getVideoTracks()[0];
+  if (!t || !t.getCapabilities().torch) { toast('Flash dəstəklənmir', 'warning'); return; }
+  const on = adminScanner?.isTorchOn;
+  try { await t.applyConstraints({ advanced: [{ torch: !on }] }); } catch(e) {}
 });
 
-domA.adminCameraSwitch.addEventListener('click', async () => {
-  stopAdminScanner();
-  adminState.cameraId = adminState.cameraId === 'environment' ? 'user' : 'environment';
+$('admin-camera-switch').addEventListener('click', async () => {
+  stopAdminScan();
+  state.cameraId = state.cameraId === 'environment' ? 'user' : 'environment';
   try {
-    adminState.scanner = new Html5Qrcode('admin-scanner-element');
-    await adminState.scanner.start(
-      { facingMode: adminState.cameraId },
-      { fps: 30, qrbox: { width: 240, height: 240 } },
-      onAdminScanSuccess,
-      () => {}
-    );
-    adminState.scannerRunning = true;
-    domA.adminStartScanner.textContent = 'Kameranı bağla';
-  } catch (err) {
-    showAdminToast('Kamera xətası', 'error');
-  }
+    adminScanner = new Html5Qrcode('admin-scanner-element');
+    await adminScanner.start({ facingMode: state.cameraId }, { fps: 30, qrbox: { width: 240, height: 240 } }, text => {
+      stopAdminScan();
+      $('pf-qr-id').value = text.trim();
+      const existing = state.productsArr.find(p => (p.qrCode || p.qrId || p.id) === text.trim());
+      if (existing) { editProduct(existing.id); toast('Mövcud məhsul', 'info'); }
+      else { resetForm(); $('pf-qr-id').value = text.trim(); $('pf-name').focus(); toast('QR oxundu', 'success'); }
+      if (navigator.vibrate) navigator.vibrate(100);
+    }, () => {});
+    adminScanning = true;
+    $('admin-start-scanner').textContent = 'Kameranı bağla';
+  } catch (err) { toast('Kamera xətası', 'error'); }
 });
 
 // ============================================
-// EXPOSE GLOBALLY
+// EXPOSE GLOBALS
 // ============================================
 
 window.editProduct = editProduct;
 window.deleteProduct = deleteProduct;
-window.showPriceHistory = showPriceHistory;
-window.openOrderDetail = openOrderDetail;
-window.deleteOrder = deleteOrder;
-window.quickPrintOrder = quickPrintOrder;
-window.editItemQty = editItemQty;
-window.editItemQtySet = editItemQtySet;
-window.editItemPrice = editItemPrice;
-window.editRemoveItem = editRemoveItem;
+window.openOrder = openOrder;
+window.delOrder = delOrder;
+window.printOrder = printOrder;
+window.oiQty = oiQty;
+window.oiQtySet = oiQtySet;
+window.oiPrice = oiPrice;
+window.oiRemove = oiRemove;
 
 // ============================================
 // INIT
 // ============================================
 
-const savedTheme = localStorage.getItem('gasham-theme') || 'light';
-document.documentElement.setAttribute('data-theme', savedTheme);
+const loading = $('loading-screen');
+setTimeout(() => { loading.classList.add('fade-out'); setTimeout(() => loading.style.display = 'none', 500); }, 400);
 
-function init() {
-  // Hide loading screen
-  setTimeout(() => {
-    domA.loading.classList.add('fade-out');
-    setTimeout(() => domA.loading.style.display = 'none', 600);
-  }, 400);
-
-  // Wait a brief moment for Firebase to init, then load data
-  setTimeout(() => {
-    initAdminData();
-  }, 800);
-}
-
-document.addEventListener('DOMContentLoaded', init);
+if (checkSession()) { showDashboard(); setTimeout(initData, 600); }
+else { showAuth(); }
