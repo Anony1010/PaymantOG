@@ -183,15 +183,9 @@
     const p = state.products[id];
     if (!p) return;
     state.editingProductId = id;
-    if ($('pf-qr-id')) $('pf-qr-id').value = p.qrCode || p.qrId || id;
     if ($('pf-name')) $('pf-name').value = p.productName || p.name || '';
     if ($('pf-price')) $('pf-price').value = p.price || '';
     if ($('pf-stock')) $('pf-stock').value = p.stock || 0;
-    if ($('pf-category')) $('pf-category').value = p.category || '';
-    if ($('pf-barcode')) $('pf-barcode').value = p.barcode || '';
-    if ($('pf-note')) $('pf-note').value = p.note || '';
-    if ($('pf-image')) $('pf-image').value = p.image || '';
-    if ($('pf-status')) $('pf-status').value = p.status || 'active';
     if ($('pf-submit')) $('pf-submit').textContent = 'Yenilə';
     if ($('pf-delete')) $('pf-delete').classList.remove('hidden');
     // Navigate to scanner page
@@ -365,25 +359,31 @@
     if (settingsLogout) settingsLogout.addEventListener('click', () => { clearSession(); showAuth(); });
 
     // Product form
-    const productForm = $('product-form');
-    if (productForm) {
-      productForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
         if (!database) { toast('Firebase yoxdur', 'error'); return; }
-        const qrId = $('pf-qr-id')?.value?.trim();
         const name = $('pf-name')?.value?.trim();
-        if (!qrId || !name) { toast('QR ID və Ad doldurulmalıdır', 'error'); return; }
+        if (!name) { toast('Məhsul adı daxil edin', 'error'); return; }
         const data = {
-          qrCode: qrId, productName: name,
+          productName: name,
           price: parseFloat($('pf-price')?.value) || 0,
           stock: parseInt($('pf-stock')?.value) || 0,
-          category: $('pf-category')?.value?.trim() || '',
-          barcode: $('pf-barcode')?.value?.trim() || '',
-          note: $('pf-note')?.value?.trim() || '',
-          image: $('pf-image')?.value?.trim() || '',
-          status: $('pf-status')?.value || 'active',
-          updatedAt: nowISO(), updatedBy: 'admin'
+          updatedAt: nowISO(), updatedBy: 'admin',
+          status: 'active'
         };
+        try {
+          if (state.editingProductId) {
+            await database.ref(`products/${state.editingProductId}`).update(data);
+            const oldSnap = await database.ref(`products/${state.editingProductId}/price`).once('value');
+            const oldPrice = oldSnap.val();
+            if (oldPrice && parseFloat(oldPrice) !== data.price) {
+              await database.ref('priceHistory').push({ productId: state.editingProductId, productName: name, oldPrice: parseFloat(oldPrice), newPrice: data.price, changedBy: 'admin', changedAt: nowISO() });
+            }
+            toast('Məhsul yeniləndi', 'success');
+          } else {
+            data.createdAt = nowISO(); data.createdBy = 'admin';
+            const newRef = database.ref('products').push();
+            await newRef.set(data);
+            toast(`Məhsul "${name}" əlavə edildi`, 'success');
+          }
         try {
           if (state.editingProductId) {
             await database.ref(`products/${state.editingProductId}`).update(data);
@@ -501,10 +501,10 @@
           const vals = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
           const data = {};
           headers.forEach((h, idx) => { data[h] = vals[idx] || ''; });
-          if (data.qrCode && data.productName) {
+          if (data.productName) {
             data.price = parseFloat(data.price) || 0; data.stock = parseInt(data.stock) || 0;
             data.createdAt = nowISO(); data.updatedAt = nowISO();
-            await database.ref(`products/${data.qrCode}`).set(data);
+            await database.ref('products').push(data);
             imported++;
           }
         }
@@ -516,14 +516,14 @@
     // Export buttons
     const exportCsv = $('export-csv');
     if (exportCsv) exportCsv.addEventListener('click', () => {
-      const h = ['qrCode','productName','price','category','stock','barcode','status'];
-      const r = state.productsArr.map(p => [p.qrCode||p.id, p.productName||p.name, p.price, p.category||'', p.stock||'', p.barcode||'', p.status||'active'].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+      const h = ['productName','price','stock','status'];
+      const r = state.productsArr.map(p => [p.productName||p.name, p.price, p.stock||'', p.status||'active'].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
       downloadCSV([h.join(','),...r].join('\n'), 'products.csv');
     });
 
     const exportExcel = $('export-excel');
     if (exportExcel) exportExcel.addEventListener('click', () => {
-      const r = state.productsArr.map(p => [p.qrCode||p.id, p.productName||p.name, p.price, p.category||'', p.stock||'', p.barcode||'', p.status||'active'].join(','));
+      const r = state.productsArr.map(p => [p.productName||p.name, p.price, p.stock||'', p.status||'active'].join(','));
       downloadCSV('\uFEFFqrCode,productName,price,category,stock,barcode,status\n' + r.join('\n'), 'products.xlsx');
     });
 
@@ -531,7 +531,7 @@
     if (exportPdf) exportPdf.addEventListener('click', () => {
       const rows = state.productsArr.map(p => `<tr><td>${esc(p.qrCode||p.id)}</td><td>${esc(p.productName||p.name)}</td><td>${fp(p.price)}</td><td>${esc(p.category||'')}</td><td>${p.stock||0}</td></tr>`).join('');
       const w = window.open('', '_blank');
-      w.document.write(`<html><head><title>GASHAM - Məhsullar</title><style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f7}h2{text-align:center;color:#1d1d1f}</style></head><body><h2>GASHAM - Məhsul Siyahısı</h2><p style="text-align:right;color:#666">${new Date().toLocaleDateString('az-AZ')}</p><table><thead><tr><th>QR ID</th><th>Ad</th><th>Qiymət</th><th>Kateqoriya</th><th>Stok</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
+      w.document.write(`<html><head><title>GASHAM - Məhsullar</title><style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f7}h2{text-align:center;color:#1d1d1f}</style></head><body><h2>GASHAM - Məhsul Siyahısı</h2><p style="text-align:right;color:#666">${new Date().toLocaleDateString('az-AZ')}</p><table><thead><tr><th>Ad</th><th>Qiymət</th><th>Stok</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
       w.document.close();
     });
 
@@ -572,10 +572,9 @@
             text => {
               stopAdminScan();
               const qrId = text.trim();
-              const qrField = $('pf-qr-id'); if (qrField) qrField.value = qrId;
               const existing = state.productsArr.find(p => (p.qrCode || p.qrId || p.id) === qrId);
               if (existing) { window.editProduct(existing.id); toast('Mövcud məhsul: ' + (existing.productName || existing.name), 'info'); }
-              else { resetForm(); if (qrField) qrField.value = qrId; const nameField = $('pf-name'); if (nameField) nameField.focus(); toast('QR oxundu', 'success'); }
+              else { resetForm(); toast('QR oxundu - yeni məhsul əlavə edin', 'success'); const nameField = $('pf-name'); if (nameField) nameField.focus(); }
               if (navigator.vibrate) navigator.vibrate(100);
             }, () => {});
           state.scanning = true;
@@ -610,13 +609,12 @@
         try {
           state.scanner = new Html5Qrcode('admin-scanner-element');
           await state.scanner.start({ facingMode: state.cameraId }, { fps: 30, qrbox: { width: 240, height: 240 } },
-            text => {
               stopAdminScan();
               const qrId = text.trim();
-              const qrField = $('pf-qr-id'); if (qrField) qrField.value = qrId;
               const existing = state.productsArr.find(p => (p.qrCode || p.qrId || p.id) === qrId);
-              if (existing) { window.editProduct(existing.id); toast('Mövcud məhsul', 'info'); }
-              else { resetForm(); if (qrField) qrField.value = qrId; const nf = $('pf-name'); if (nf) nf.focus(); toast('QR oxundu', 'success'); }
+              if (existing) { window.editProduct(existing.id); toast('Mövcud məhsul: ' + (existing.productName || existing.name), 'info'); }
+              else { resetForm(); toast('QR oxundu - yeni məhsul əlavə edin', 'success'); const nf = $('pf-name'); if (nf) nf.focus(); }
+              if (navigator.vibrate) navigator.vibrate(100);
               if (navigator.vibrate) navigator.vibrate(100);
             }, () => {});
           state.scanning = true;

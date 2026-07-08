@@ -57,7 +57,7 @@ function playBeep() {
 // ============================================
 
 function showScanSuccess() {
-  const ov = $('scan-success-overlay');
+  const ov = $('scan-overlay');
   ov.classList.remove('hidden', 'fade-out');
   playBeep();
   if (navigator.vibrate) navigator.vibrate(100);
@@ -71,7 +71,7 @@ function showScanSuccess() {
 // THEME
 // ============================================
 
-$('theme-toggle').addEventListener('click', () => {
+$('theme-btn').addEventListener('click', () => {
   const cur = document.documentElement.getAttribute('data-theme');
   const next = cur === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
@@ -86,7 +86,7 @@ async function startScanner() {
   $('scanner-modal').classList.remove('hidden');
   try {
     if (state.scanner) { await state.scanner.stop(); state.scanner.clear(); }
-    state.scanner = new Html5Qrcode('scanner-element');
+    state.scanner = new Html5Qrcode('scanner-el');
     await state.scanner.start(
       { facingMode: 'environment' },
       { fps: 30, qrbox: { width: 250, height: 250 },
@@ -117,7 +117,7 @@ $('new-order-btn').addEventListener('click', startScanner);
 $('scanner-close').addEventListener('click', () => { stopScanner(); $('scanner-modal').classList.add('hidden'); });
 $('scanner-modal').querySelector('.modal-backdrop')?.addEventListener('click', () => { stopScanner(); $('scanner-modal').classList.add('hidden'); });
 
-$('camera-switch').addEventListener('click', async () => {
+$('cam-btn').addEventListener('click', async () => {
   if (!state.scanner) return;
   try {
     await state.scanner.stop();
@@ -129,13 +129,13 @@ $('camera-switch').addEventListener('click', async () => {
   } catch(err) { toast('Kamera dəyişmə xətası', 'error'); }
 });
 
-$('flash-toggle').addEventListener('click', async () => {
-  const v = document.querySelector('#scanner-element video'); if (!v) return;
+$('flash-btn').addEventListener('click', async () => {
+  const v = document.querySelector('#scanner-el video'); if (!v) return;
   const t = v.srcObject?.getVideoTracks()[0]; if (!t) return;
   if (!t.getCapabilities().torch) { toast('Flash dəstəklənmir', 'warning'); return; }
   state.flashOn = !state.flashOn;
   await t.applyConstraints({ advanced: [{ torch: state.flashOn }] });
-  $('flash-toggle').style.color = state.flashOn ? '#ff0' : '';
+  $('flash-btn').style.color = state.flashOn ? '#ff0' : '';
 });
 
 // ============================================
@@ -190,11 +190,11 @@ function renderCart() {
   const total = state.cart.reduce((s, i) => s + i.price * i.qty, 0);
   const count = state.cart.reduce((s, i) => s + i.qty, 0);
   $('cart-badge').textContent = count;
-  $('cart-item-count').textContent = count;
+  $('cart-count').textContent = count;
   
   $('cart-total').textContent = fp(total);
 
-  $('cart-items').innerHTML = state.cart.map(item => `
+  $('cart-body').innerHTML = state.cart.map(item => `
     <div class="cart-item">
       <div class="cart-item-info">
         <span class="cart-item-name">${esc(item.name)}</span>
@@ -216,11 +216,11 @@ window.changeQty = changeQty;
 // CONFIRM ORDER
 // ============================================
 
-$('confirm-order-btn').addEventListener('click', async () => {
+$('confirm-btn').addEventListener('click', async () => {
   if (!state.cart.length) { toast('Sifariş boşdur', 'warning'); return; }
   if (!database) { toast('Firebase yoxdur', 'error'); return; }
 
-  const btn = $('confirm-order-btn');
+  const btn = $('confirm-btn');
   btn.disabled = true; btn.textContent = 'Yadda saxlanılır...';
 
   try {
@@ -269,7 +269,7 @@ function subscribeRTDB() {
 
 function renderHistory() {
   const completed = state.orders.filter(o => o.status === 'Təsdiqlənib' || o.status === 'completed');
-  $('history-count').textContent = completed.length;
+  $('hist-count').textContent = completed.length;
 
   if (!completed.length) {
     $('history-list').innerHTML = `
@@ -382,17 +382,17 @@ $('admin-btn')?.addEventListener('click', () => {
     return;
   }
   $('admin-login-modal')?.classList.remove('hidden');
-  const input = $('admin-code-input');
+  const input = $('admin-code');
   if (input) { input.value = ''; input.focus(); }
-  const error = $('admin-login-error');
+  const error = $('admin-error');
   if (error) error.classList.add('hidden');
 });
 
 // Login form
-$('admin-login-form')?.addEventListener('submit', e => {
+$('admin-form')?.addEventListener('submit', e => {
   e.preventDefault();
-  const code = $('admin-code-input')?.value?.trim();
-  const error = $('admin-login-error');
+  const code = $('admin-code')?.value?.trim();
+  const error = $('admin-error');
   if (code === ADMIN_CODE) {
     adminSaveSession();
     toast('Giriş uğurlu', 'success');
@@ -400,11 +400,11 @@ $('admin-login-form')?.addEventListener('submit', e => {
     window.location.href = 'admin.html';
   } else {
     if (error) { error.textContent = 'Yanlış kod!'; error.classList.remove('hidden'); }
-    const input = $('admin-code-input');
+    const input = $('admin-code');
     if (input) { input.value = ''; input.focus(); }
   }
 });
 
 // Close modal
-$('admin-login-close')?.addEventListener('click', () => $('admin-login-modal')?.classList.add('hidden'));
+$('admin-close')?.addEventListener('click', () => $('admin-login-modal')?.classList.add('hidden'));
 $('admin-login-modal')?.querySelector('.modal-backdrop')?.addEventListener('click', () => $('admin-login-modal')?.classList.add('hidden'));

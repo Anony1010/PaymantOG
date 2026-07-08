@@ -1,29 +1,24 @@
 /**
  * GASHAM - Firebase Configuration
- * Firebase Realtime Database ilə tam inteqrasiya
+ * Firebase Realtime Database (mixx-f7914)
  */
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDnbN3yJfuHejYqTv5HsisJMec0QjpaJzg",
-  authDomain: "chatog-94528.firebaseapp.com",
-  databaseURL: "https://chatog-94528-default-rtdb.firebaseio.com",
-  projectId: "chatog-94528",
-  storageBucket: "chatog-94528.firebasestorage.app",
-  messagingSenderId: "877401186095",
-  appId: "1:877401186095:web:04d181fbbf2aaebb64cbda"
+  apiKey: "AIzaSyCcDSed2r8H6TjRZHW4gDXo6Ui-TniessM",
+  authDomain: "mixx-f7914.firebaseapp.com",
+  databaseURL: "https://mixx-f7914-default-rtdb.firebaseio.com",
+  projectId: "mixx-f7914",
+  storageBucket: "mixx-f7914.firebasestorage.app",
+  messagingSenderId: "144282948974",
+  appId: "1:144282948974:web:ca3e301ec3550226dd5d7f"
 };
 
-// Firebase xidmətləri (global)
 let database = null;
 
 try {
   if (typeof firebase !== 'undefined') {
     firebase.initializeApp(firebaseConfig);
     database = firebase.database();
-    // Offline persistence aktiv
-    database.ref('.info/connected').on('value', snap => {
-      console.log('Firebase bağlantısı:', snap.val() ? 'ONLINE' : 'OFFLINE');
-    });
   }
 } catch (err) {
   console.warn('Firebase yüklənmədi:', err.message);
