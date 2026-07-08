@@ -132,8 +132,8 @@
 /* === SCANNER PAGE === */
 .scanner-page-layout { display: flex; flex-direction: column; gap: 16px; }
 .scanner-section { display: flex; flex-direction: column; gap: 10px; align-items: center; }
-.scanner-viewport.small { max-width: 300px; aspect-ratio: 1; width: 100%; margin: 0 auto; }
-.scanner-viewport.small #admin-scanner-element { width: 100%; height: 100%; }
+.scanner-view { max-width: 300px; margin: 0 auto; }
+.scanner-view #admin-scanner-element { width: 100%; height: 100%; }
 .product-form-section {
   background: var(--bg-card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 16px;
