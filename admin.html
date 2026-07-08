@@ -22,26 +22,25 @@
   <!-- Toast Container -->
   <div id="toast-container"></div>
 
-  <!-- Auth Screen -->
-  <div id="auth-screen" class="screen hidden">
+  <!-- Auth Screen (Code-based) -->
+  <div id="auth-screen" class="screen">
     <div class="auth-container">
       <div class="auth-brand">
         <div class="auth-logo">G</div>
         <h1>GASHAM</h1>
         <p>Admin Panel</p>
       </div>
-      <form id="login-form" class="auth-form" autocomplete="off">
+      <form id="admin-login-form" class="auth-form" autocomplete="off">
         <div class="form-group">
-          <label for="login-email">Email</label>
-          <input type="email" id="login-email" placeholder="admin@email.com" required autocomplete="email" />
-        </div>
-        <div class="form-group">
-          <label for="login-password">Şifrə</label>
-          <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password" />
+          <label>Admin Kodu</label>
+          <input type="password" id="admin-code" placeholder="Kodu daxil edin" required autocomplete="off" />
         </div>
         <button type="submit" id="login-btn" class="btn btn-primary btn-block">Giriş</button>
         <p id="login-error" class="error-message hidden"></p>
       </form>
+      <p style="text-align:center;margin-top:16px;font-size:13px;color:var(--text-muted)">
+        <a href="index.html" style="color:var(--accent)">← İstifadəçi Panelinə qayıt</a>
+      </p>
     </div>
   </div>
 
@@ -78,7 +77,7 @@
       </nav>
       <div class="sidebar-footer">
         <div class="admin-info">
-          <span id="admin-email-display" class="admin-email"></span>
+          <span class="admin-title">Admin</span>
         </div>
         <button id="logout-btn" class="btn btn-outline btn-sm">Çıxış</button>
       </div>
@@ -105,7 +104,7 @@
         <div class="stats-grid" id="stats-grid">
           <div class="stat-card"><div class="stat-icon blue"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div><div class="stat-info"><span class="stat-label">Məhsullar</span><span class="stat-value" id="stat-products">0</span></div></div>
           <div class="stat-card"><div class="stat-icon green"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div><div class="stat-info"><span class="stat-label">Ümumi Sifariş</span><span class="stat-value" id="stat-total-orders">0</span></div></div>
-          <div class="stat-card"><div class="stat-icon orange"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-info"><span class="stat-label">Bugünkü Sifariş</span><span class="stat-value" id="stat-today-orders">0</span></div></div>
+          <div class="stat-card"><div class="stat-icon orange"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-info"><span class="stat-label">Bu gün</span><span class="stat-value" id="stat-today-orders">0</span></div></div>
           <div class="stat-card"><div class="stat-icon purple"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="stat-info"><span class="stat-label">Ümumi Gəlir</span><span class="stat-value" id="stat-revenue">0.00 ₼</span></div></div>
           <div class="stat-card"><div class="stat-icon pink"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></div><div class="stat-info"><span class="stat-label">Ən çox satılan</span><span class="stat-value" id="stat-top-product">-</span></div></div>
           <div class="stat-card full-width"><div class="stat-header"><span>Son Sifarişlər</span></div><div id="recent-orders-list" class="recent-list"><p class="muted">Heç bir sifariş yoxdur</p></div></div>
@@ -145,7 +144,26 @@
 
       <!-- Orders Page -->
       <div class="page" id="page-orders">
-        <div class="page-header"><h1>Sifarişlər</h1></div>
+        <div class="page-header">
+          <h1>Sifarişlər</h1>
+        </div>
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <input type="text" id="order-search" placeholder="Sifariş nömrəsi..." class="search-input" />
+            <input type="date" id="order-date-filter" class="select-input" />
+            <select id="order-status-filter" class="select-input">
+              <option value="">Bütün statuslar</option>
+              <option value="Təsdiqlənib">Təsdiqlənib</option>
+              <option value="active">Active</option>
+            </select>
+          </div>
+          <div class="toolbar-right">
+            <button id="orders-export-pdf" class="btn btn-sm btn-outline">PDF</button>
+            <button id="orders-export-excel" class="btn btn-sm btn-outline">Excel</button>
+            <button id="orders-export-csv" class="btn btn-sm btn-outline">CSV</button>
+            <button id="orders-print" class="btn btn-sm btn-outline">Çap</button>
+          </div>
+        </div>
         <div class="table-container">
           <table class="data-table" id="orders-table">
             <thead><tr><th>Sifariş #</th><th>Tarix</th><th>Saat</th><th>Məhsul Sayı</th><th>Cəmi</th><th>Status</th><th>Əməliyyat</th></tr></thead>
@@ -161,7 +179,7 @@
           <div class="scanner-section">
             <div id="admin-scanner-viewport" class="scanner-viewport small">
               <div class="scanner-frame"><div class="scanner-corner tl"></div><div class="scanner-corner tr"></div><div class="scanner-corner bl"></div><div class="scanner-corner br"></div><div class="scanner-line"></div></div>
-              <video id="admin-scanner-video" autoplay playsinline></video>
+              <div id="admin-scanner-element"></div>
             </div>
             <div class="scanner-controls">
               <button id="admin-flash-toggle" class="btn-scanner-ctrl"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></button>
@@ -202,13 +220,13 @@
       <div class="page" id="page-settings">
         <div class="page-header"><h1>Parametrlər</h1></div>
         <div class="settings-section">
-          <h3>Firebase Konfiqurasiya</h3>
-          <p class="muted">Firebase config js/firebase-config.js faylında dəyişdirilə bilər.</p>
+          <h3>Admin Hesab</h3>
+          <p class="muted">Admin kodu: <strong>gasham66</strong></p>
+          <button id="settings-logout" class="btn btn-danger mt-1">Çıxış et</button>
         </div>
         <div class="settings-section">
-          <h3>Admin Hesab</h3>
-          <p class="muted">Çıxış etmək üçün aşağıdakı düyməni istifadə edin.</p>
-          <button id="settings-logout" class="btn btn-danger">Çıxış et</button>
+          <h3>Firebase Konfiqurasiya</h3>
+          <p class="muted">Firebase config <code>js/firebase-config.js</code> faylında yerləşir.</p>
         </div>
       </div>
     </div>
@@ -220,7 +238,7 @@
     <div class="modal-content sm">
       <div class="modal-header"><h3>Import Məhsullar</h3><button class="btn-close" id="import-modal-close">&times;</button></div>
       <div class="modal-body">
-        <p>CSV faylı seçin (başlıqlar: qrId, name, price, category, stock, barcode, status)</p>
+        <p style="font-size:14px;margin-bottom:12px">CSV faylı seçin (başlıqlar: qrId, name, price, category, stock, barcode, status)</p>
         <input type="file" id="import-file" accept=".csv" />
         <button id="import-execute" class="btn btn-primary mt-1">Import et</button>
       </div>
@@ -233,6 +251,19 @@
     <div class="modal-content sm">
       <div class="modal-header"><h3>Qiymət Tarixçəsi</h3><button class="btn-close" id="price-history-close">&times;</button></div>
       <div id="price-history-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Order Detail Modal -->
+  <div id="order-detail-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header"><h3 id="order-detail-title">Sifariş Detalları</h3><button class="btn-close" id="order-detail-close">&times;</button></div>
+      <div id="order-detail-body" class="modal-body"></div>
+      <div id="order-detail-footer" class="modal-footer hidden">
+        <button id="order-save-changes" class="btn btn-primary">Yadda saxla</button>
+        <button id="order-delete-full" class="btn btn-danger">Sifarişi sil</button>
+      </div>
     </div>
   </div>
 
