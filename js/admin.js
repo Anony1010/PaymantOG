@@ -19,7 +19,8 @@
     cameraId: 'environment',
     scanner: null,
     scanning: false,
-    flashOn: false
+    flashOn: false,
+    lastScannedQr: null
   };
 
   const $ = id => document.getElementById(id);
@@ -335,12 +336,14 @@
         if (!database) { toast('Firebase yoxdur', 'error'); return; }
         const name = $('pf-name')?.value?.trim();
         if (!name) { toast('Məhsul adı daxil edin', 'error'); return; }
+        const qrCode = state.lastScannedQr || '';
         const data = {
           productName: name,
           price: parseFloat($('pf-price')?.value) || 0,
           stock: parseInt($('pf-stock')?.value) || 0,
           updatedAt: nowISO(), updatedBy: 'admin',
-          status: 'active'
+          status: 'active',
+          qrCode: qrCode
         };
         try {
           if (state.editingProductId) {
@@ -536,7 +539,8 @@
         state.scanner.start({ facingMode: 'environment' }, { fps: 30, qrbox: { width: 240, height: 240 } },
           function(text) {
             stopAdminScan();
-            var qrId = text.trim();
+            state.lastScannedQr = text.trim();
+            var qrId = state.lastScannedQr;
             var existing = state.productsArr.find(function(p) { return (p.qrCode || p.qrId || p.id) === qrId; });
             if (existing) { window.editProduct(existing.id); toast('Mövcud məhsul: ' + (existing.productName || existing.name), 'info'); }
             else { resetForm(); toast('QR oxundu - yeni məhsul əlavə edin', 'success'); var nf = $('pf-name'); if (nf) nf.focus(); }
@@ -578,7 +582,8 @@
           await state.scanner.start({ facingMode: state.cameraId }, { fps: 30, qrbox: { width: 250, height: 250 } },
             text => {
               stopAdminScan();
-              const qrId = text.trim();
+              state.lastScannedQr = text.trim();
+              const qrId = state.lastScannedQr;
               const existing = state.productsArr.find(p => (p.qrCode || p.qrId || p.id) === qrId);
               if (existing) { window.editProduct(existing.id); toast('Mövcud məhsul: ' + (existing.productName || existing.name), 'info'); }
               else { resetForm(); toast('QR oxundu - yeni məhsul əlavə edin', 'success'); const nf = $('pf-name'); if (nf) nf.focus(); }

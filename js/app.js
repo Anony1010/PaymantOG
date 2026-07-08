@@ -94,6 +94,9 @@ async function startScanner() {
       },
       text => {
         handleCode(text.trim());
+        // 1 second pause so same QR is not scanned again
+        try { state.scanner.pause(); } catch(e) {}
+        setTimeout(function() { try { state.scanner.resume(); } catch(e) {} }, 1000);
       },
       () => {}
     );
@@ -121,6 +124,8 @@ $('cam-btn').addEventListener('click', async () => {
     state.cameraId = { facingMode: isEnv ? 'user' : 'environment' };
     await state.scanner.start(state.cameraId, { fps: 30, qrbox: { width: 250, height: 250 } }, t => {
       handleCode(t.trim());
+      try { state.scanner.pause(); } catch(e) {}
+      setTimeout(function() { try { state.scanner.resume(); } catch(e) {} }, 1000);
     }, () => {});
   } catch(err) { toast('Kamera dəyişmə xətası', 'error'); }
 });
@@ -270,14 +275,7 @@ function renderHistory() {
   $('hist-count').textContent = completed.length;
 
   if (!completed.length) {
-    $('history-list').innerHTML = `
-      <div class="empty-state">
-        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25">
-          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-        </svg>
-        <p>Hələ heç bir sifariş yoxdur</p>
-        <p class="sub">Yeni sifariş yaratmaq üçün düyməni istifadə edin</p>
-      </div>`;
+        $('history-list').innerHTML = '';
     return;
   }
 
