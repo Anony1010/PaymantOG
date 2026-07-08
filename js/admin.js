@@ -547,26 +547,29 @@
       const btn = $('admin-start-scanner'); if (btn) btn.textContent = 'Kameranı aç';
     }
 
-    const flashBtn = $('admin-flash-toggle');
+    const flashBtn = $('flash-btn');
     if (flashBtn) {
-      flashBtn.addEventListener('click', async () => {
+          flashBtn.addEventListener('click', async () => {
         const v = document.querySelector('#admin-scanner-element video');
         if (!v) return;
         const t = v.srcObject?.getVideoTracks()[0];
-        if (!t || !t.getCapabilities?.()?.torch) { toast('Flash dəstəklənmir', 'warning'); return; }
+        if (!t) return;
+        if (!t.getCapabilities().torch) { toast('Flash dəstəklənmir', 'warning'); return; }
         state.flashOn = !state.flashOn;
-        try { await t.applyConstraints({ advanced: [{ torch: state.flashOn }] }); } catch(e) {}
+        await t.applyConstraints({ advanced: [{ torch: state.flashOn }] });
+        flashBtn.style.color = state.flashOn ? '#ff0' : '';
       });
     }
 
-    const camSwitch = $('admin-camera-switch');
+    const camSwitch = $('cam-btn');
     if (camSwitch) {
-      camSwitch.addEventListener('click', async () => {
-        stopAdminScan();
-        state.cameraId = state.cameraId === 'environment' ? 'user' : 'environment';
+          camSwitch.addEventListener('click', async () => {
+        if (!state.scanner) return;
         try {
-          state.scanner = new Html5Qrcode('admin-scanner-element');
-          await state.scanner.start({ facingMode: state.cameraId }, { fps: 30, qrbox: { width: 240, height: 240 } },
+          await state.scanner.stop();
+          const isEnv = state.cameraId === 'environment';
+          state.cameraId = isEnv ? 'user' : 'environment';
+          await state.scanner.start({ facingMode: state.cameraId }, { fps: 30, qrbox: { width: 250, height: 250 } },
             text => {
               stopAdminScan();
               const qrId = text.trim();
@@ -576,7 +579,6 @@
               if (navigator.vibrate) navigator.vibrate(100);
             }, () => {});
           state.scanning = true;
-          const btn = $('admin-start-scanner'); if (btn) btn.textContent = 'Kameranı bağla';
         } catch(err) { toast('Kamera xətası', 'error'); }
       });
     }
