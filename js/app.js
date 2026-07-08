@@ -93,10 +93,6 @@ async function startScanner() {
         formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E, Html5QrcodeSupportedFormats.PDF_417, Html5QrcodeSupportedFormats.DATA_MATRIX, Html5QrcodeSupportedFormats.AZTEC]
       },
       text => {
-        state.scanning = false;
-        if (state.scanner) state.scanner.stop().catch(() => {});
-        $('scanner-modal').classList.add('hidden');
-        showScanSuccess();
         handleCode(text.trim());
       },
       () => {}
@@ -124,7 +120,7 @@ $('cam-btn').addEventListener('click', async () => {
     const isEnv = state.cameraId?.facingMode === 'environment';
     state.cameraId = { facingMode: isEnv ? 'user' : 'environment' };
     await state.scanner.start(state.cameraId, { fps: 30, qrbox: { width: 250, height: 250 } }, t => {
-      state.scanning = false; state.scanner.stop().catch(() => {}); $('scanner-modal').classList.add('hidden'); showScanSuccess(); handleCode(t.trim());
+      handleCode(t.trim());
     }, () => {});
   } catch(err) { toast('Kamera dəyişmə xətası', 'error'); }
 });
@@ -149,13 +145,15 @@ async function handleCode(code) {
     const snap = await database.ref(`products/${code}`).once('value');
     if (snap.val() && snap.val().status !== 'inactive') {
       addToCart({ id: code, ...snap.val() });
+      playBeep();
+      if (navigator.vibrate) navigator.vibrate(80);
       return;
     }
     // Search by qrCode field
     const all = await database.ref('products').once('value');
     const products = all.val() || {};
     const found = Object.entries(products).find(([id, p]) => (p.qrCode === code || p.qrId === code) && p.status !== 'inactive');
-    if (found) { addToCart({ id: found[0], ...found[1] }); return; }
+    if (found) { addToCart({ id: found[0], ...found[1] }); playBeep(); if (navigator.vibrate) navigator.vibrate(80); return; }
     toast('Məhsul tapılmadı', 'error');
   } catch(err) { toast('Xəta: ' + err.message, 'error'); }
 }
