@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="az" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a0a1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="GASHAM - Professional QR Order & POS System" />
+  <title>GASHAM - QR POS Sistemi</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loading-screen">
+    <div class="loader">
+      <div class="loader-ring"></div>
+      <div class="loader-text">GASHAM</div>
+      <div class="loader-sub">Yüklənir...</div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- App Container -->
+  <div id="app" class="hidden">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <span class="brand">GASHAM</span>
+        <span class="brand-sub">POS Sistemi</span>
+      </div>
+      <div class="header-right">
+        <button id="theme-toggle" class="btn-icon" aria-label="Mövzu dəyiş">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+        <button id="orders-btn" class="btn-icon" aria-label="Sifarişlər">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- New Order Button -->
+      <div class="new-order-section">
+        <button id="new-order-btn" class="btn-new-order">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span>Yeni Sifariş</span>
+        </button>
+      </div>
+
+      <!-- Active Order Summary -->
+      <div id="active-order-summary" class="order-summary hidden">
+        <div class="order-summary-header">
+          <span id="order-number-display" class="order-number">Sifariş #0</span>
+          <span id="order-time-display" class="order-time"></span>
+        </div>
+        <div class="order-summary-total">
+          <span>Cəmi:</span>
+          <span id="order-total-display">0.00 ₼</span>
+        </div>
+      </div>
+
+      <!-- Orders List -->
+      <div id="orders-container" class="orders-container">
+        <div class="orders-header">
+          <h2>Sifarişlər</h2>
+          <span id="orders-count" class="badge">0</span>
+        </div>
+        <div id="orders-list" class="orders-list">
+          <div class="empty-state">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="0.3">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            <p>Hələ heç bir sifariş yoxdur</p>
+            <p class="sub">Yeni sifariş yaratmaq üçün düyməyə basın</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search Section -->
+      <div class="search-section">
+        <button id="search-toggle-btn" class="btn-search-toggle">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <span>Axtar</span>
+        </button>
+      </div>
+    </main>
+
+    <!-- Scanner Modal -->
+    <div id="scanner-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content scanner-modal">
+        <div class="modal-header">
+          <h3>QR Kod Oxu</h3>
+          <button class="btn-close" id="scanner-close">&times;</button>
+        </div>
+        <div class="scanner-container">
+          <div id="scanner-viewport" class="scanner-viewport">
+            <div class="scanner-frame">
+              <div class="scanner-corner tl"></div>
+              <div class="scanner-corner tr"></div>
+              <div class="scanner-corner bl"></div>
+              <div class="scanner-corner br"></div>
+              <div class="scanner-line"></div>
+            </div>
+            <video id="scanner-video" autoplay playsinline></video>
+          </div>
+          <div class="scanner-controls">
+            <button id="flash-toggle" class="btn-scanner-ctrl" aria-label="Flash">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+            </button>
+            <button id="camera-switch" class="btn-scanner-ctrl" aria-label="Kamera dəyiş">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+              </svg>
+            </button>
+          </div>
+          <p class="scanner-hint">QR kodu çərçivəyə yerləşdirin</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Detail Modal -->
+    <div id="order-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content order-modal-content">
+        <div class="modal-header">
+          <h3 id="order-modal-title">Sifariş Detalları</h3>
+          <button class="btn-close" id="order-modal-close">&times;</button>
+        </div>
+        <div id="order-modal-body" class="order-modal-body"></div>
+        <div class="order-modal-actions">
+          <button id="print-order-btn" class="btn btn-outline">Çap et</button>
+          <button id="pdf-order-btn" class="btn btn-outline">PDF</button>
+          <button id="close-order-btn" class="btn btn-primary">Sifarişi Bitir</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search Modal -->
+    <div id="search-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content search-modal-content">
+        <div class="modal-header">
+          <h3>Axtarış</h3>
+          <button class="btn-close" id="search-close">&times;</button>
+        </div>
+        <div class="search-body">
+          <div class="search-tabs">
+            <button class="search-tab active" data-type="qr">QR ilə</button>
+            <button class="search-tab" data-type="name">Adla</button>
+            <button class="search-tab" data-type="category">Kateqoriya</button>
+          </div>
+          <div class="search-input-group">
+            <input type="text" id="search-input" placeholder="Axtar..." autocomplete="off" />
+            <button id="search-execute" class="btn btn-primary">Axtar</button>
+          </div>
+          <div id="search-results" class="search-results"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-storage-compat.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
