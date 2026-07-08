@@ -349,19 +349,23 @@ a.btn-icon { text-decoration: none; }
 
 }
 @media (min-width: 768px) {
-  .hero { padding: 28px 32px 16px; }
-  .history-wrap { padding: 20px 32px 40px; }
-  .history-list { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .btn-hero { padding: 26px 24px; font-size: 22px; }
-  .header { padding: 18px; min-height: 60px; }
+  .hero { padding: 32px 40px 16px; display: flex; justify-content: center; }
+  .hero .btn-hero { max-width: 480px; }
+  .history-wrap { padding: 20px 40px 40px; }
+  .history-list { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .btn-hero { padding: 28px 32px; font-size: 22px; border-radius: 28px; }
+  .header { padding: 20px; min-height: 64px; }
   .header-left { flex: 1; }
-
-  .brand { font-size: 26px; letter-spacing: 1.2px; }
-
+  .brand { font-size: 26px; letter-spacing: 1.5px; }
+  .btn-icon { width: 40px; height: 40px; border-radius: 12px; }
+  .order-card { padding: 18px 20px; border-radius: 18px; }
 }
 @media (min-width: 1024px) {
-  .hero { padding: 36px 40px 20px; }
-  .history-wrap { padding: 24px 40px 48px; }
+  .hero { padding: 48px 56px 24px; }
+  .hero .btn-hero { max-width: 520px; padding: 32px 40px; font-size: 26px; }
+  .history-wrap { padding: 24px 56px 56px; max-width: 1100px; }
+  .history-list { grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .brand { font-size: 36px; letter-spacing: 2.5px; }
 }
 
 /* === USER PANEL IMPROVEMENTS === */
@@ -500,56 +504,42 @@ a.btn-icon { text-decoration: none; }
   .history-list {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 14px;
   }
+  .hero { display: flex; justify-content: center; }
+  .hero .btn-hero { max-width: 420px; }
 }
 
 @media (min-width: 900px) {
-  .history-list {
-    grid-template-columns: 1fr 1fr 1fr;
+  .hero { padding: 40px 48px 20px; display: flex; justify-content: center; }
+  .hero .btn-hero { max-width: 500px; padding: 30px 36px; font-size: 24px; gap: 16px; border-radius: 32px; box-shadow: 0 12px 48px rgba(0,122,255,0.35); }
+  .hero .btn-hero:hover { box-shadow: 0 16px 56px rgba(0,122,255,0.5); transform: translateY(-2px); }
+  .hero .btn-hero svg { width: 28px; height: 28px; }
+  .history-wrap { max-width: 960px; margin: 0 auto; padding: 20px 48px 48px; }
+  .history-list { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  
+  .header { max-width: 100%; margin: 0 auto; padding: 24px; min-height: 72px; }
+  .header-left { flex: 1; }
+  .header-right { gap: 12px; flex-shrink: 0; }
+  .brand { font-size: 32px; letter-spacing: 2px; }
+  .btn-icon { width: 48px; height: 48px; border-radius: 14px; }
+  .btn-icon svg { width: 24px; height: 24px; }
+  .header-right .btn-icon { background: var(--primary-light); border-radius: 14px; transition: all 0.25s ease; }
+  .header-right .btn-icon:hover { background: var(--accent); color: #fff; transform: scale(1.08); box-shadow: 0 4px 16px rgba(0,122,255,0.3); }
+
+  .order-card { padding: 20px 22px; border-radius: 20px; transition: var(--trans); }
+  .order-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+  .order-card::before { height: 4px; }
+  .order-card:active { transform: scale(0.98); }
+  .order-card .oc-num { font-size: 18px; }
+  .order-card .oc-total { font-size: 22px; }
+
+  .history-list .order-card:first-child {
+    background: linear-gradient(135deg, var(--bg2), var(--primary-light));
+    border-color: var(--accent);
   }
-  .hero {
-    max-width: 800px;
-    margin: 0 auto;
-  }
-  .header {
-    max-width: 100%;
-    margin: 0 auto;
-    padding: 20px;
-    min-height: 64px;
-  }
-  .header-left {
-    flex: 1;
-  }
-  .header-right {
-    gap: 8px; flex-shrink: 0;
-  }
-  .brand {
-    font-size: 30px;
-    letter-spacing: 1.5px;
-  }
-  .btn-icon {
-    width: 46px;
-    height: 46px;
-    border-radius: 14px;
-  }
-  .btn-icon svg {
-    width: 22px;
-    height: 22px;
-  }
-  .header-right .btn-icon {
-    background: var(--primary-light);
-    border-radius: 14px;
-    transition: all 0.2s ease;
-  }
-  .header-right .btn-icon:hover {
-    background: var(--accent);
-    color: #fff;
-    transform: scale(1.05);
-  }
-  .history-wrap {
-    max-width: 900px;
-    margin: 0 auto;
+  [data-theme="dark"] .history-list .order-card:first-child {
+    background: linear-gradient(135deg, var(--bg2), rgba(0,122,255,0.08));
   }
 }
 
