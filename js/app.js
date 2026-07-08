@@ -1,6 +1,6 @@
 /**
- * GASHAM - User Panel Application v2
- * QR POS Sistemi - Tam yenilənmiş istifadəçi paneli
+ * GASHAM - User Panel Application v3
+ * QR POS Sistemi - Təmiz, sürətli, professional
  */
 
 // ============================================
@@ -15,8 +15,7 @@ function showToast(message, type = 'info') {
   toast.innerHTML = `
     <span class="toast-icon">${icons[type] || 'ℹ'}</span>
     <span class="toast-message">${message}</span>
-    <button class="toast-close">&times;</button>
-  `;
+    <button class="toast-close">&times;</button>`;
   toast.querySelector('.toast-close').onclick = () => removeToast(toast);
   container.appendChild(toast);
   setTimeout(() => removeToast(toast), 4000);
@@ -29,12 +28,12 @@ function removeToast(toast) {
 }
 
 function formatDate(date) {
-  const d = date instanceof Date ? date : date.toDate ? date.toDate() : new Date(date);
+  const d = date instanceof Date ? date : date?.toDate ? date.toDate() : new Date(date);
   return d.toLocaleDateString('az-AZ', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function formatTime(date) {
-  const d = date instanceof Date ? date : date.toDate ? date.toDate() : new Date(date);
+  const d = date instanceof Date ? date : date?.toDate ? date.toDate() : new Date(date);
   return d.toLocaleTimeString('az-AZ', { hour: '2-digit', minute: '2-digit' });
 }
 
@@ -59,53 +58,42 @@ const state = {
   scannerRunning: false,
   cameraId: { exact: 'environment' },
   flashOn: false,
-  beepAudio: null
+  beepCtx: null
 };
 
 // ============================================
 // DOM REFS
 // ============================================
 
-const $ = id => document.getElementById(id);
 const dom = {
-  loading: $('loading-screen'),
-  app: $('app'),
-  themeToggle: $('theme-toggle'),
-  newOrderBtn: $('new-order-btn'),
-  adminBtn: $('admin-btn'),
+  loading: document.getElementById('loading-screen'),
+  app: document.getElementById('app'),
+  themeToggle: document.getElementById('theme-toggle'),
+  newOrderBtn: document.getElementById('new-order-btn'),
   // Cart
-  cartSection: $('cart-section'),
-  cartItems: $('cart-items'),
-  cartBadge: $('cart-badge'),
-  cartItemCount: $('cart-item-count'),
-  cartSubtotal: $('cart-subtotal'),
-  cartTotal: $('cart-total'),
-  confirmOrderBtn: $('confirm-order-btn'),
-  cartSpacer: $('cart-spacer'),
+  cartSection: document.getElementById('cart-section'),
+  cartItems: document.getElementById('cart-items'),
+  cartBadge: document.getElementById('cart-badge'),
+  cartItemCount: document.getElementById('cart-item-count'),
+  cartSubtotal: document.getElementById('cart-subtotal'),
+  cartTotal: document.getElementById('cart-total'),
+  confirmOrderBtn: document.getElementById('confirm-order-btn'),
+  cartSpacer: document.getElementById('cart-spacer'),
   // Scanner
-  scannerModal: $('scanner-modal'),
-  scannerClose: $('scanner-close'),
-  scannerElement: $('scanner-element'),
-  flashToggle: $('flash-toggle'),
-  cameraSwitch: $('camera-switch'),
-  // Admin Login
-  adminLoginModal: $('admin-login-modal'),
-  adminLoginForm: $('admin-login-form'),
-  adminCodeInput: $('admin-code-input'),
-  adminLoginBtn: $('admin-login-btn'),
-  adminLoginError: $('admin-login-error'),
-  adminLoginClose: $('admin-login-close'),
-  adminLogoutBtn: $('admin-logout-btn'),
+  scannerModal: document.getElementById('scanner-modal'),
+  scannerClose: document.getElementById('scanner-close'),
+  scannerElement: document.getElementById('scanner-element'),
+  flashToggle: document.getElementById('flash-toggle'),
+  cameraSwitch: document.getElementById('camera-switch'),
   // Review
-  reviewModal: $('review-modal'),
-  reviewTitle: $('review-title'),
-  reviewBody: $('review-body'),
-  reviewClose: $('review-close'),
+  reviewModal: document.getElementById('review-modal'),
+  reviewTitle: document.getElementById('review-title'),
+  reviewBody: document.getElementById('review-body'),
+  reviewClose: document.getElementById('review-close'),
   // History
-  historyList: $('history-list'),
-  historyCount: $('history-count'),
-  // Scan success overlay
-  scanOverlay: $('scan-success-overlay')
+  historyList: document.getElementById('history-list'),
+  historyCount: document.getElementById('history-count'),
+  scanOverlay: document.getElementById('scan-success-overlay')
 };
 
 // ============================================
@@ -113,18 +101,12 @@ const dom = {
 // ============================================
 
 function initBeep() {
-  try {
-    // Create audio context for beep
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    state.beepAudio = ctx;
-  } catch (e) {
-    console.warn('Audio not available');
-  }
+  try { state.beepCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
 }
 
 function playBeep() {
   try {
-    const ctx = state.beepAudio;
+    const ctx = state.beepCtx;
     if (!ctx) return;
     if (ctx.state === 'suspended') ctx.resume();
     const osc = ctx.createOscillator();
@@ -137,7 +119,7 @@ function playBeep() {
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.15);
-  } catch (e) { /* silent */ }
+  } catch (e) {}
 }
 
 // ============================================
@@ -155,24 +137,19 @@ function showScanSuccess() {
       overlay.classList.add('hidden');
       overlay.classList.remove('fade-out');
     }, 400);
-  }, 600);
+  }, 650);
 }
 
 // ============================================
 // THEME
 // ============================================
 
-function initTheme() {
-  const saved = localStorage.getItem('gasham-theme') || 'light';
-  document.documentElement.setAttribute('data-theme', saved);
-}
-
 function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
   const next = current === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
+  html.setAttribute('data-theme', next);
   localStorage.setItem('gasham-theme', next);
-  showToast(`${next === 'dark' ? 'Qaranlıq' : 'İşıqlı'} rejim`, 'info');
 }
 
 // ============================================
@@ -186,100 +163,67 @@ async function startScanner() {
       await state.scanner.stop();
       state.scanner.clear();
     }
-
     state.scanner = new Html5Qrcode('scanner-element');
-
-    const config = {
-      fps: 30,
-      qrbox: { width: 260, height: 260 },
-      aspectRatio: 1.0,
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.QR_CODE,
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39,
-        Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E,
-        Html5QrcodeSupportedFormats.PDF_417,
-        Html5QrcodeSupportedFormats.DATA_MATRIX,
-        Html5QrcodeSupportedFormats.AZTEC,
-        Html5QrcodeSupportedFormats.MAXICODE,
-        Html5QrcodeSupportedFormats.CODABAR,
-        Html5QrcodeSupportedFormats.ITF
-      ]
-    };
-
     await state.scanner.start(
       { facingMode: 'environment' },
-      config,
+      {
+        fps: 30,
+        qrbox: { width: 250, height: 250 },
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.QR_CODE,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.PDF_417,
+          Html5QrcodeSupportedFormats.DATA_MATRIX,
+          Html5QrcodeSupportedFormats.AZTEC,
+          Html5QrcodeSupportedFormats.CODABAR,
+          Html5QrcodeSupportedFormats.ITF
+        ]
+      },
       onScanSuccess,
-      onScanFailure
+      () => {}
     );
-
     state.scannerRunning = true;
-    // Try to start flash if available
-    tryFlash();
   } catch (err) {
-    console.error('Scanner start error:', err);
+    console.error('Scanner error:', err);
     showToast('Kamera açılmadı: ' + err.message, 'error');
     dom.scannerModal.classList.add('hidden');
   }
 }
 
-function onScanSuccess(decodedText, decodedResult) {
+function onScanSuccess(decodedText) {
   if (!state.scannerRunning) return;
-  // Stop scanner briefly to prevent duplicate scans
   state.scannerRunning = false;
-  if (state.scanner) {
-    state.scanner.stop().catch(() => {});
-  }
+  if (state.scanner) state.scanner.stop().catch(() => {});
   dom.scannerModal.classList.add('hidden');
   showScanSuccess();
   handleScannedCode(decodedText);
 }
 
-function onScanFailure(err) {
-  // Ignore continuous scan failures
-}
-
-async function tryFlash() {
-  try {
-    const devices = await Html5Qrcode.getCameras();
-    // Flash is handled via track constraints if available
-  } catch (e) { /* ignore */ }
-}
-
 function stopScanner() {
   state.scannerRunning = false;
   if (state.scanner) {
-    try {
-      state.scanner.stop();
-      state.scanner.clear();
-    } catch (e) { /* ignore */ }
+    try { state.scanner.stop(); state.scanner.clear(); } catch (e) {}
   }
 }
 
-// Camera switch
 async function switchCamera() {
   if (!state.scanner) return;
   try {
     await state.scanner.stop();
     const isEnv = state.cameraId.facingMode === 'environment';
     state.cameraId = { facingMode: isEnv ? 'user' : 'environment' };
-    await state.scanner.start(
-      state.cameraId,
-      { fps: 30, qrbox: { width: 260, height: 260 } },
-      onScanSuccess,
-      onScanFailure
-    );
+    await state.scanner.start(state.cameraId, { fps: 30, qrbox: { width: 250, height: 250 } }, onScanSuccess, () => {});
     state.scannerRunning = true;
   } catch (err) {
     showToast('Kamera dəyişdirilə bilmədi', 'error');
   }
 }
 
-// Flash toggle
 async function toggleFlash() {
   try {
     const video = document.querySelector('#scanner-element video');
@@ -287,16 +231,11 @@ async function toggleFlash() {
     const track = video.srcObject?.getVideoTracks()[0];
     if (!track) return;
     const caps = track.getCapabilities();
-    if (!caps.torch) {
-      showToast('Flash dəstəklənmir', 'warning');
-      return;
-    }
+    if (!caps.torch) { showToast('Flash dəstəklənmir', 'warning'); return; }
     state.flashOn = !state.flashOn;
     await track.applyConstraints({ advanced: [{ torch: state.flashOn }] });
-    dom.flashToggle.style.color = state.flashOn ? '#ff0' : '';
-  } catch (e) {
-    showToast('Flash idarə edilə bilmədi', 'warning');
-  }
+    document.getElementById('flash-toggle').style.color = state.flashOn ? '#ff0' : '';
+  } catch (e) {}
 }
 
 // ============================================
@@ -305,30 +244,29 @@ async function toggleFlash() {
 
 async function handleScannedCode(code) {
   const qrId = code.trim();
+  if (!db) { showToast('Firebase bağlantısı yoxdur. Məhsul əlavə edilə bilməz.', 'error'); return; }
+
   try {
-    const doc = await db.collection('products').doc(qrId).get();
+    // Try exact ID match
+    let doc = await db.collection('products').doc(qrId).get();
     if (doc.exists && doc.data().status !== 'inactive') {
-      const product = { id: doc.id, ...doc.data() };
-      addToCart(product);
-    } else {
-      // Try searching by qrId field
-      const snap = await db.collection('products')
-        .where('qrId', '==', qrId)
-        .where('status', '!=', 'inactive')
-        .limit(1).get();
-      if (!snap.empty) {
-        const doc2 = snap.docs[0];
-        addToCart({ id: doc2.id, ...doc2.data() });
-      } else {
-        showToast('Məhsul tapılmadı', 'error');
-        // Re-enable scanner
-        setTimeout(() => dom.newOrderBtn.click(), 500);
-      }
+      addToCart({ id: doc.id, ...doc.data() });
+      return;
     }
+    // Try qrId field match
+    const snap = await db.collection('products')
+      .where('qrId', '==', qrId)
+      .where('status', '!=', 'inactive')
+      .limit(1).get();
+    if (!snap.empty) {
+      const d = snap.docs[0];
+      addToCart({ id: d.id, ...d.data() });
+      return;
+    }
+    showToast('Məhsul tapılmadı', 'error');
   } catch (err) {
     console.error('Product lookup error:', err);
     showToast('Xəta baş verdi', 'error');
-    setTimeout(() => dom.newOrderBtn.click(), 500);
   }
 }
 
@@ -344,19 +282,12 @@ function addToCart(product) {
   } else {
     state.cart.push({
       id: product.id,
-      qrId: product.qrId || product.id,
       name: product.name,
       price: parseFloat(product.price || 0),
-      qty: 1,
-      image: product.image || ''
+      qty: 1
     });
     showToast(`${product.name} əlavə edildi`, 'success');
   }
-  renderCart();
-}
-
-function removeCartItem(id) {
-  state.cart = state.cart.filter(i => i.id !== id);
   renderCart();
 }
 
@@ -364,9 +295,7 @@ function changeQty(id, delta) {
   const item = state.cart.find(i => i.id === id);
   if (!item) return;
   item.qty = Math.max(0, item.qty + delta);
-  if (item.qty === 0) {
-    state.cart = state.cart.filter(i => i.id !== id);
-  }
+  if (item.qty === 0) state.cart = state.cart.filter(i => i.id !== id);
   renderCart();
 }
 
@@ -382,20 +311,19 @@ function renderCart() {
   const hasItems = state.cart.length > 0;
   dom.cartSection.classList.toggle('hidden', !hasItems);
   dom.cartSpacer.classList.toggle('hidden', !hasItems);
-
   if (!hasItems) return;
 
   dom.cartBadge.textContent = getCartItemCount();
   dom.cartItemCount.textContent = getCartItemCount();
-  const sub = getCartTotal();
-  dom.cartSubtotal.textContent = formatPrice(sub);
-  dom.cartTotal.textContent = formatPrice(sub);
+  const total = getCartTotal();
+  dom.cartSubtotal.textContent = formatPrice(total);
+  dom.cartTotal.textContent = formatPrice(total);
 
   dom.cartItems.innerHTML = state.cart.map(item => `
     <div class="cart-item">
       <div class="cart-item-info">
-        <div class="cart-item-name">${escHtml(item.name)}</div>
-        <div class="cart-item-price">${formatPrice(item.price)}</div>
+        <span class="cart-item-name">${escHtml(item.name)}</span>
+        <span class="cart-item-price">${formatPrice(item.price)}</span>
       </div>
       <div class="cart-item-actions">
         <button class="btn-qty" onclick="changeQty('${item.id}', -1)">−</button>
@@ -412,44 +340,32 @@ function renderCart() {
 // ============================================
 
 async function confirmOrder() {
-  if (state.cart.length === 0) {
-    showToast('Sifariş boşdur', 'warning');
-    return;
-  }
+  if (state.cart.length === 0) { showToast('Sifariş boşdur', 'warning'); return; }
+  if (!db) { showToast('Firebase bağlantısı yoxdur', 'error'); return; }
 
   dom.confirmOrderBtn.disabled = true;
   dom.confirmOrderBtn.textContent = 'Yadda saxlanılır...';
 
   try {
     const orderNumber = await getNextOrderNumber();
-    const orderData = {
-      orderNumber: orderNumber,
-      items: state.cart.map(i => ({
-        qrId: i.qrId,
-        name: i.name,
-        price: i.price,
-        qty: i.qty
-      })),
+    await db.collection('orders').add({
+      orderNumber,
+      items: state.cart.map(i => ({ name: i.name, price: i.price, qty: i.qty })),
       total: getCartTotal(),
       itemCount: getCartItemCount(),
       status: 'Təsdiqlənib',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    await db.collection('orders').add(orderData);
+    });
     showToast(`Sifariş #${orderNumber} təsdiqləndi!`, 'success');
-    
-    // Clear cart
     state.cart = [];
     renderCart();
     dom.confirmOrderBtn.disabled = false;
     dom.confirmOrderBtn.textContent = 'Təsdiqlə';
-    // Scroll to history section
+    // Scroll to history
     document.querySelector('.history-section').scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
-    console.error('Order save error:', err);
-    showToast('Xəta baş verdi: ' + err.message, 'error');
+    showToast('Xəta: ' + err.message, 'error');
     dom.confirmOrderBtn.disabled = false;
     dom.confirmOrderBtn.textContent = 'Təsdiqlə';
   }
@@ -457,28 +373,22 @@ async function confirmOrder() {
 
 async function getNextOrderNumber() {
   try {
-    const snap = await db.collection('orders')
-      .orderBy('orderNumber', 'desc')
-      .limit(1)
-      .get();
+    const snap = await db.collection('orders').orderBy('orderNumber', 'desc').limit(1).get();
     if (snap.empty) return 1;
     return (snap.docs[0].data().orderNumber || 0) + 1;
   } catch { return Date.now() % 10000; }
 }
 
 // ============================================
-// ORDER HISTORY
+// ORDER HISTORY (Realtime)
 // ============================================
 
 function subscribeOrders() {
-  db.collection('orders')
-    .orderBy('createdAt', 'desc')
-    .onSnapshot(snapshot => {
-      state.orders = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderHistory();
-    }, err => {
-      console.error('Orders subscription error:', err);
-    });
+  if (!db) return;
+  db.collection('orders').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+    state.orders = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderHistory();
+  }, err => console.error('Orders subscription error:', err));
 }
 
 function renderHistory() {
@@ -488,10 +398,12 @@ function renderHistory() {
   if (!completed.length) {
     dom.historyList.innerHTML = `
       <div class="empty-state">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25">
           <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
         </svg>
         <p>Hələ heç bir sifariş yoxdur</p>
+        <p class="sub">Yeni sifariş yaratmaq üçün yuxarıdakı düyməni istifadə edin</p>
       </div>`;
     return;
   }
@@ -529,85 +441,24 @@ function showReview(orderId) {
 
   const items = (order.items || []).map(item => `
     <div class="review-item">
-      <div>
-        <strong>${escHtml(item.name)}</strong>
-        <span style="font-size:13px;color:var(--text-secondary)"> × ${item.qty}</span>
-      </div>
-      <div style="text-align:right">
-        <div>${formatPrice(item.price)}</div>
-        <div style="font-size:13px;color:var(--accent);font-weight:600">${formatPrice(item.price * item.qty)}</div>
+      <div><strong>${escHtml(item.name)}</strong> <span class="review-item-qty">× ${item.qty}</span></div>
+      <div class="review-item-amounts">
+        <span class="review-item-unit">${formatPrice(item.price)}</span>
+        <span class="review-item-total">${formatPrice(item.price * item.qty)}</span>
       </div>
     </div>
   `).join('');
 
   dom.reviewBody.innerHTML = `
     <div class="review-meta">
-      <div>Tarix: ${formatDate(date)} ${formatTime(date)}</div>
-      <div>Status: <span class="order-card-status completed">${order.status}</span></div>
+      <span>Tarix: ${formatDate(date)} ${formatTime(date)}</span>
+      <span class="order-card-status completed" style="margin-left:8px">${order.status}</span>
     </div>
-    <div>${items}</div>
+    <div class="review-items">${items}</div>
     <div class="review-total">Ümumi: ${formatPrice(order.total || 0)}</div>
   `;
-
   dom.reviewModal.classList.remove('hidden');
 }
-
-// ============================================
-// ADMIN LOGIN (Code-based)
-// ============================================
-
-const ADMIN_CODE = 'gasham66';
-const SESSION_KEY = 'gasham_admin_session';
-
-function checkAdminSession() {
-  return localStorage.getItem(SESSION_KEY) === 'true';
-}
-
-function saveAdminSession() {
-  localStorage.setItem(SESSION_KEY, 'true');
-}
-
-function clearAdminSession() {
-  localStorage.removeItem(SESSION_KEY);
-}
-
-function openAdmin() {
-  if (checkAdminSession()) {
-    window.location.href = 'admin.html';
-    return;
-  }
-  dom.adminLoginModal.classList.remove('hidden');
-  dom.adminCodeInput.value = '';
-  dom.adminLoginError.classList.add('hidden');
-  dom.adminLogoutBtn.classList.add('hidden');
-  dom.adminLoginForm.classList.remove('hidden');
-  dom.adminCodeInput.focus();
-}
-
-dom.adminLoginForm.addEventListener('submit', e => {
-  e.preventDefault();
-  const code = dom.adminCodeInput.value.trim();
-  if (code === ADMIN_CODE) {
-    saveAdminSession();
-    showToast('Giriş uğurlu', 'success');
-    dom.adminLoginModal.classList.add('hidden');
-    window.location.href = 'admin.html';
-  } else {
-    dom.adminLoginError.textContent = 'Yanlış kod!';
-    dom.adminLoginError.classList.remove('hidden');
-    dom.adminCodeInput.value = '';
-    dom.adminCodeInput.focus();
-  }
-});
-
-dom.adminLogoutBtn.addEventListener('click', () => {
-  clearAdminSession();
-  dom.adminLoginForm.classList.remove('hidden');
-  dom.adminLogoutBtn.classList.add('hidden');
-  dom.adminLoginError.textContent = 'Çıxış edildi';
-  dom.adminLoginError.classList.remove('hidden');
-  dom.adminLoginError.style.color = 'var(--success)';
-});
 
 // ============================================
 // EVENT LISTENERS
@@ -616,46 +467,28 @@ dom.adminLogoutBtn.addEventListener('click', () => {
 dom.themeToggle.addEventListener('click', toggleTheme);
 
 dom.newOrderBtn.addEventListener('click', () => {
-  if (state.scannerRunning) {
-    stopScanner();
-    dom.scannerModal.classList.add('hidden');
-  }
+  if (state.scannerRunning) { stopScanner(); dom.scannerModal.classList.add('hidden'); }
   startScanner();
 });
 
-dom.adminBtn.addEventListener('click', openAdmin);
-
-// Scanner modal
-dom.scannerClose.addEventListener('click', () => {
-  stopScanner();
-  dom.scannerModal.classList.add('hidden');
-});
-dom.scannerModal.querySelector('.modal-backdrop')?.addEventListener('click', () => {
-  stopScanner();
-  dom.scannerModal.classList.add('hidden');
-});
-
+dom.scannerClose.addEventListener('click', () => { stopScanner(); dom.scannerModal.classList.add('hidden'); });
+dom.scannerModal.querySelector('.modal-backdrop')?.addEventListener('click', () => { stopScanner(); dom.scannerModal.classList.add('hidden'); });
 dom.flashToggle.addEventListener('click', toggleFlash);
 dom.cameraSwitch.addEventListener('click', switchCamera);
-
-// Admin login modal
-dom.adminLoginClose.addEventListener('click', () => {
-  dom.adminLoginModal.classList.add('hidden');
-});
-dom.adminLoginModal.querySelector('.modal-backdrop')?.addEventListener('click', () => {
-  dom.adminLoginModal.classList.add('hidden');
-});
-
-// Confirm order
 dom.confirmOrderBtn.addEventListener('click', confirmOrder);
-
-// Review modal
 dom.reviewClose.addEventListener('click', () => dom.reviewModal.classList.add('hidden'));
 dom.reviewModal.querySelector('.modal-backdrop')?.addEventListener('click', () => dom.reviewModal.classList.add('hidden'));
 
-// Expose for inline onclick
-window.addToCart = addToCart;
-window.removeCartItem = removeCartItem;
+// Keyboard shortcut: Escape to close modals
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    dom.scannerModal.classList.add('hidden');
+    dom.reviewModal.classList.add('hidden');
+    stopScanner();
+  }
+});
+
+// Expose functions
 window.changeQty = changeQty;
 window.showReview = showReview;
 
@@ -664,28 +497,25 @@ window.showReview = showReview;
 // ============================================
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  });
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
 
 // ============================================
 // INIT
 // ============================================
 
-async function init() {
-  initTheme();
+function init() {
+  const savedTheme = localStorage.getItem('gasham-theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+
   initBeep();
   subscribeOrders();
-  // If admin session exists, show toast
-  if (checkAdminSession()) {
-    showToast('Admin panelə xoş gəldiniz', 'info');
-  }
+
   setTimeout(() => {
     dom.loading.classList.add('fade-out');
     dom.app.classList.remove('hidden');
     setTimeout(() => dom.loading.style.display = 'none', 600);
-  }, 600);
+  }, 500);
 }
 
 document.addEventListener('DOMContentLoaded', init);

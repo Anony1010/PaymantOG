@@ -1,8 +1,10 @@
 /**
  * GASHAM - Firebase Configuration
- * Bu fayl Firebase bağlantısını konfiqurasiya edir.
  * Öz Firebase layihənizin məlumatlarını daxil edin.
+ * Firebase xidmətləri əlçatan olmasa belə app işləməyə davam edir.
  */
+
+// Firebase konfiqurasiya - Öz məlumatlarınızı daxil edin
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -12,18 +14,27 @@ const firebaseConfig = {
   appId: "YOUR_APP_ID"
 };
 
-// Firebase-i başlat
-firebase.initializeApp(firebaseConfig);
+// Firebase xidmətləri
+let db = null;
+let auth = null;
+let storage = null;
 
-// Xidmətlər
-const db = firebase.firestore();
-const auth = firebase.auth();
-const storage = firebase.storage();
+try {
+  // Firebase-i başlat
+  if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    auth = firebase.auth();
+    storage = firebase.storage();
 
-// Realtime əlaqə üçün Firestore settings
-db.settings({
-  cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
-  merge: true
-});
-db.enablePersistence()
-  .catch(err => console.warn('Firestore persistence error:', err));
+    // Realtime settings
+    db.settings({
+      cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
+      merge: true
+    });
+    db.enablePersistence()
+      .catch(err => console.warn('Firestore persistence xətası:', err));
+  }
+} catch (err) {
+  console.warn('Firebase yüklənmədi. Offline rejimdə işləyir.', err.message);
+}

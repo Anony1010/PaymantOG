@@ -22,35 +22,13 @@
   <!-- Toast Container -->
   <div id="toast-container"></div>
 
-  <!-- Auth Screen (Code-based) -->
-  <div id="auth-screen" class="screen">
-    <div class="auth-container">
-      <div class="auth-brand">
-        <div class="auth-logo">G</div>
-        <h1>GASHAM</h1>
-        <p>Admin Panel</p>
-      </div>
-      <form id="admin-login-form" class="auth-form" autocomplete="off">
-        <div class="form-group">
-          <label>Admin Kodu</label>
-          <input type="password" id="admin-code" placeholder="Kodu daxil edin" required autocomplete="off" />
-        </div>
-        <button type="submit" id="login-btn" class="btn btn-primary btn-block">Giriş</button>
-        <p id="login-error" class="error-message hidden"></p>
-      </form>
-      <p style="text-align:center;margin-top:16px;font-size:13px;color:var(--text-muted)">
-        <a href="index.html" style="color:var(--accent)">← İstifadəçi Panelinə qayıt</a>
-      </p>
-    </div>
-  </div>
-
   <!-- Admin Dashboard -->
-  <div id="dashboard-screen" class="screen hidden">
+  <div id="dashboard-screen">
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <div class="sidebar-brand">GASHAM</div>
-        <div class="sidebar-brand-sub">Admin</div>
+        <a href="index.html" class="sidebar-brand" style="text-decoration:none">GASHAM</a>
+        <div class="sidebar-brand-sub">Admin Panel</div>
         <button id="sidebar-close" class="btn-icon sidebar-close-btn">&times;</button>
       </div>
       <nav class="sidebar-nav">
@@ -77,9 +55,9 @@
       </nav>
       <div class="sidebar-footer">
         <div class="admin-info">
-          <span class="admin-title">Admin</span>
+          <span class="admin-title">GASHAM Admin</span>
         </div>
-        <button id="logout-btn" class="btn btn-outline btn-sm">Çıxış</button>
+        <a href="index.html" class="btn btn-outline btn-sm" style="text-align:center;text-decoration:none">← İstifadəçi Paneli</a>
       </div>
     </aside>
 
@@ -89,9 +67,9 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <span class="topbar-title">GASHAM Admin</span>
-      <button id="theme-toggle-admin" class="btn-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      </button>
+      <a href="index.html" class="btn-icon" style="display:flex;align-items:center;justify-content:center;color:var(--text-primary)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a>
     </header>
 
     <!-- Main Content Area -->
@@ -135,7 +113,7 @@
         </div>
         <div class="table-container">
           <table class="data-table" id="products-table">
-            <thead><tr><th><input type="checkbox" id="select-all-products" /></th><th>Şəkil</th><th>QR ID</th><th>Ad</th><th>Qiymət</th><th>Kateqoriya</th><th>Stok</th><th>Status</th><th>Əməliyyat</th></tr></thead>
+            <thead><tr><th style="width:40px"><input type="checkbox" id="select-all-products" /></th><th>Şəkil</th><th>QR ID</th><th>Ad</th><th>Qiymət</th><th>Kateqoriya</th><th>Stok</th><th>Status</th><th>Əməliyyat</th></tr></thead>
             <tbody id="products-tbody"></tbody>
           </table>
         </div>
@@ -154,7 +132,7 @@
             <select id="order-status-filter" class="select-input">
               <option value="">Bütün statuslar</option>
               <option value="Təsdiqlənib">Təsdiqlənib</option>
-              <option value="active">Active</option>
+              <option value="active">Aktiv</option>
             </select>
           </div>
           <div class="toolbar-right">
@@ -182,8 +160,8 @@
               <div id="admin-scanner-element"></div>
             </div>
             <div class="scanner-controls">
-              <button id="admin-flash-toggle" class="btn-scanner-ctrl"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></button>
-              <button id="admin-camera-switch" class="btn-scanner-ctrl"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
+              <button id="admin-flash-toggle" class="btn-scanner-ctrl" title="Flash"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></button>
+              <button id="admin-camera-switch" class="btn-scanner-ctrl" title="Kamera dəyiş"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
               <button id="admin-start-scanner" class="btn btn-primary">Kameranı aç</button>
             </div>
           </div>
@@ -219,14 +197,15 @@
       <!-- Settings Page -->
       <div class="page" id="page-settings">
         <div class="page-header"><h1>Parametrlər</h1></div>
-        <div class="settings-section">
-          <h3>Admin Hesab</h3>
-          <p class="muted">Admin kodu: <strong>gasham66</strong></p>
-          <button id="settings-logout" class="btn btn-danger mt-1">Çıxış et</button>
-        </div>
-        <div class="settings-section">
-          <h3>Firebase Konfiqurasiya</h3>
-          <p class="muted">Firebase config <code>js/firebase-config.js</code> faylında yerləşir.</p>
+        <div class="settings-card">
+          <div class="settings-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+          <div>
+            <h3>Admin Panel</h3>
+            <p class="muted">GASHAM POS sisteminin idarəetmə paneli. Firebase bağlantısı <code>js/firebase-config.js</code> faylında konfiqurasiya olunur.</p>
+            <a href="index.html" class="btn btn-outline mt-1" style="display:inline-block">İstifadəçi Panelinə keç</a>
+          </div>
         </div>
       </div>
     </div>
@@ -238,8 +217,8 @@
     <div class="modal-content sm">
       <div class="modal-header"><h3>Import Məhsullar</h3><button class="btn-close" id="import-modal-close">&times;</button></div>
       <div class="modal-body">
-        <p style="font-size:14px;margin-bottom:12px">CSV faylı seçin (başlıqlar: qrId, name, price, category, stock, barcode, status)</p>
-        <input type="file" id="import-file" accept=".csv" />
+        <p style="font-size:14px;margin-bottom:12px;color:var(--text-secondary)">CSV faylı seçin (başlıqlar: qrId, name, price, category, stock, barcode, status)</p>
+        <input type="file" id="import-file" accept=".csv" class="form-control-file" />
         <button id="import-execute" class="btn btn-primary mt-1">Import et</button>
       </div>
     </div>

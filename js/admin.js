@@ -1,17 +1,13 @@
 /**
- * GASHAM - Admin Panel Application v2
- * Code-based giriş, tam sifariş idarəetməsi
+ * GASHAM - Admin Panel Application v3
+ * Birbaşa giriş, tam sifariş idarəetməsi
  */
 
 // ============================================
 // STATE
 // ============================================
 
-const ADMIN_CODE = 'gasham66';
-const SESSION_KEY = 'gasham_admin_session';
-
 const adminState = {
-  isLoggedIn: false,
   products: [],
   orders: [],
   scanner: null,
@@ -31,13 +27,6 @@ const adminState = {
 const $a = id => document.getElementById(id);
 const domA = {
   loading: $a('loading-screen'),
-  auth: $a('auth-screen'),
-  dashboard: $a('dashboard-screen'),
-  loginForm: $a('admin-login-form'),
-  loginCode: $a('admin-code'),
-  loginBtn: $a('login-btn'),
-  loginError: $a('login-error'),
-  logoutBtn: $a('logout-btn'),
   sidebar: $a('sidebar'),
   sidebarToggle: $a('sidebar-toggle'),
   sidebarClose: $a('sidebar-close'),
@@ -109,8 +98,6 @@ const domA = {
   priceHistoryModal: $a('price-history-modal'),
   priceHistoryClose: $a('price-history-close'),
   priceHistoryBody: $a('price-history-body'),
-  // Settings
-  settingsLogout: $a('settings-logout'),
   toastContainer: $a('toast-container')
 };
 
@@ -155,55 +142,6 @@ function fmtTime(d) {
   return date.toLocaleTimeString('az-AZ', { hour: '2-digit', minute: '2-digit' });
 }
 
-function checkAuth() {
-  return localStorage.getItem(SESSION_KEY) === 'true';
-}
-
-// ============================================
-// AUTH (Code-based)
-// ============================================
-
-function showAdminPanel() {
-  domA.auth.classList.remove('active');
-  domA.auth.style.display = 'none';
-  domA.dashboard.classList.add('active');
-  domA.dashboard.style.display = 'flex';
-}
-
-function hideAdminPanel() {
-  domA.dashboard.classList.remove('active');
-  domA.dashboard.style.display = 'none';
-  domA.auth.classList.add('active');
-  domA.auth.style.display = 'flex';
-}
-
-domA.loginForm.addEventListener('submit', e => {
-  e.preventDefault();
-  const code = domA.loginCode.value.trim();
-  if (code === ADMIN_CODE) {
-    localStorage.setItem(SESSION_KEY, 'true');
-    adminState.isLoggedIn = true;
-    showAdminPanel();
-    initAdminData();
-    showAdminToast('Giriş uğurlu', 'success');
-  } else {
-    domA.loginError.textContent = 'Yanlış kod!';
-    domA.loginError.classList.remove('hidden');
-    domA.loginCode.value = '';
-    domA.loginCode.focus();
-  }
-});
-
-domA.logoutBtn.addEventListener('click', () => {
-  localStorage.removeItem(SESSION_KEY);
-  adminState.isLoggedIn = false;
-  hideAdminPanel();
-  domA.auth.style.display = 'flex';
-  domA.loginCode.value = '';
-  domA.loginError.classList.add('hidden');
-});
-domA.settingsLogout.addEventListener('click', () => domA.logoutBtn.click());
-
 // ============================================
 // NAVIGATION
 // ============================================
@@ -238,18 +176,30 @@ domA.themeToggle.addEventListener('click', () => {
 // ============================================
 
 function initAdminData() {
+  if (!db) {
+    showAdminToast('Firebase bağlantısı yoxdur. Məlumatlar yüklənə bilmədi.', 'warning');
+    domA.statProducts.textContent = '—';
+    domA.statTotalOrders.textContent = '—';
+    return;
+  }
+
   db.collection('products').onSnapshot(snapshot => {
     adminState.products = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     renderProducts();
     updateCategoryFilter();
     updateStats();
-  }, err => showAdminToast('Məhsul yükləmə xətası', 'error'));
+  }, err => {
+    console.error('Products load error:', err);
+    showAdminToast('Məhsullar yüklənə bilmədi: ' + err.message, 'error');
+  });
 
   db.collection('orders').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
     adminState.orders = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     renderOrdersTable();
     updateStats();
-  }, err => showAdminToast('Sifariş yükləmə xətası', 'error'));
+  }, err => {
+    console.error('Orders load error:', err);
+  });
 }
 
 // ============================================
@@ -319,10 +269,10 @@ function renderProducts() {
   tbody.innerHTML = filtered.map(p => `
     <tr>
       <td><input type="checkbox" class="product-checkbox" value="${p.id}" ${adminState.selectedProducts.has(p.id) ? 'checked' : ''} /></td>
-      <td>${p.image ? `<img src="${escHtml(p.image)}" alt="" />` : '—'}</td>
-      <td><code>${escHtml(p.qrId || p.id)}</code></td>
+      <td>${p.image ? `<img src="${escHtml(p.image)}" alt="" />` : '<span style="color:var(--text-muted)">—</span>'}</td>
+      <td><code style="font-size:12px">${escHtml(p.qrId || p.id)}</code></td>
       <td><strong>${escHtml(p.name)}</strong></td>
-      <td>${fmtPrice(p.price)}</td>
+      <td style="font-weight:600">${fmtPrice(p.price)}</td>
       <td>${escHtml(p.category || '—')}</td>
       <td>${p.stock ?? '—'}</td>
       <td><span class="status-badge ${p.status || 'active'}">${p.status || 'active'}</span></td>
@@ -367,6 +317,8 @@ domA.addProductBtn.addEventListener('click', () => {
 
 domA.productForm.addEventListener('submit', async e => {
   e.preventDefault();
+  if (!db) { showAdminToast('Firebase bağlantısı yoxdur', 'error'); return; }
+
   const data = {
     qrId: domA.pfQrId.value.trim(),
     name: domA.pfName.value.trim(),
@@ -437,6 +389,7 @@ function resetProductForm() {
 domA.pfCancel.addEventListener('click', resetProductForm);
 
 async function deleteProduct(id) {
+  if (!db) return;
   if (!confirm('Məhsulu silmək istədiyinizə əminsiniz?')) return;
   try {
     await db.collection('products').doc(id).delete();
@@ -452,6 +405,7 @@ domA.pfDelete.addEventListener('click', () => {
 });
 
 domA.bulkDeleteBtn.addEventListener('click', async () => {
+  if (!db) return;
   if (!adminState.selectedProducts.size) {
     showAdminToast('Heç bir məhsul seçilməyib', 'warning'); return;
   }
@@ -468,6 +422,7 @@ domA.bulkDeleteBtn.addEventListener('click', async () => {
 // ============================================
 
 async function showPriceHistory(productId) {
+  if (!db) { showAdminToast('Firebase yoxdur', 'error'); return; }
   domA.priceHistoryBody.innerHTML = '<p class="muted">Yüklənir...</p>';
   domA.priceHistoryModal.classList.remove('hidden');
   try {
@@ -521,12 +476,11 @@ domA.exportPdf.addEventListener('click', () => {
     <html><head><title>GASHAM - Məhsullar</title>
     <style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}
     td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f7}
-    h2{text-align:center;margin-bottom:20px}</style>
+    h2{text-align:center;margin-bottom:20px;color:#1d1d1f}</style>
     </head><body>
     <h2>GASHAM - Məhsul Siyahısı</h2>
-    <table><thead><tr><th>QR ID</th><th>Ad</th><th>Qiymət</th><th>Kateqoriya</th><th>Stok</th></tr></thead><tbody>${rows}</tbody></table>
-    <p style="text-align:right;margin-top:16px;color:#666">${new Date().toLocaleDateString('az-AZ')}</p>
-    </body></html>`);
+    <p style="text-align:right;color:#666">${new Date().toLocaleDateString('az-AZ')}</p>
+    <table><thead><tr><th>QR ID</th><th>Ad</th><th>Qiymət</th><th>Kateqoriya</th><th>Stok</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
   win.document.close();
 });
 
@@ -544,6 +498,7 @@ domA.importClose.addEventListener('click', () => domA.importModal.classList.add(
 domA.importModal.querySelector('.modal-backdrop')?.addEventListener('click', () => domA.importModal.classList.add('hidden'));
 
 domA.importExecute.addEventListener('click', async () => {
+  if (!db) { showAdminToast('Firebase yoxdur', 'error'); return; }
   const file = domA.importFile.files[0];
   if (!file) { showAdminToast('Fayl seçin', 'warning'); return; }
   const text = await file.text();
@@ -590,7 +545,7 @@ function renderOrdersTable() {
   }
 
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted)">Heç bir sifariş yoxdur</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">Heç bir sifariş yoxdur</td></tr>';
     return;
   }
 
@@ -603,7 +558,7 @@ function renderOrdersTable() {
       <td>${fmtDate(date)}</td>
       <td>${fmtTime(date)}</td>
       <td>${itemsCount}</td>
-      <td><strong>${fmtPrice(o.total)}</strong></td>
+      <td style="font-weight:600">${fmtPrice(o.total)}</td>
       <td><span class="status-badge ${statusClass}">${o.status || 'active'}</span></td>
       <td>
         <button class="btn btn-sm btn-outline" onclick="openOrderDetail('${o.id}')">Aç</button>
@@ -640,30 +595,34 @@ function renderOrderDetailItems() {
   const items = adminState.editingOrderItems;
 
   if (!items.length) {
-    body.innerHTML = '<p class="muted">Sifariş boşdur</p>';
+    body.innerHTML = '<p class="muted" style="text-align:center;padding:20px">Sifariş boşdur</p>';
     return;
   }
 
-  const date = (() => {
-    const order = adminState.orders.find(o => o.id === adminState.editingOrderId);
-    if (!order) return '';
+  const order = adminState.orders.find(o => o.id === adminState.editingOrderId);
+  const dateStr = order ? (() => {
     const d = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
-    return `<div class="review-meta"><div>Tarix: ${fmtDate(d)} ${fmtTime(d)}</div><div>Status: ${order.status || 'active'}</div></div>`;
-  })();
+    return `${fmtDate(d)} ${fmtTime(d)}`;
+  })() : '';
 
-  body.innerHTML = date + items.map((item, idx) => `
-    <div class="order-edit-item">
-      <span class="item-name">${escHtml(item.name)}</span>
-      <span style="font-size:13px;color:var(--text-muted)">${fmtPrice(item.price)}</span>
-      <button class="btn-qty" onclick="editItemQty(${idx}, -1)">−</button>
-      <input type="number" value="${item.qty}" min="0" onchange="editItemQtySet(${idx}, this.value)" />
-      <button class="btn-qty" onclick="editItemQty(${idx}, 1)">+</button>
-      <input type="number" value="${item.price}" step="0.01" class="item-price-input" onchange="editItemPrice(${idx}, this.value)" />
-      <span style="font-weight:700;color:var(--accent);min-width:70px;text-align:right">${fmtPrice(item.price * item.qty)}</span>
-      <button class="btn btn-sm btn-danger" onclick="editRemoveItem(${idx})" style="font-size:16px;padding:2px 8px">&times;</button>
+  body.innerHTML = `
+    <div class="review-meta" style="margin-bottom:12px">
+      <span style="font-size:14px;color:var(--text-secondary)">${dateStr}</span>
+      <span style="margin-left:12px" class="status-badge ${order?.status === 'Təsdiqlənib' ? 'completed' : 'active'}">${order?.status || 'active'}</span>
     </div>
-  `).join('') + `
-    <div style="margin-top:12px;text-align:right;font-size:18px;font-weight:800;color:var(--accent)">
+    ${items.map((item, idx) => `
+      <div class="order-edit-item">
+        <span class="item-name">${escHtml(item.name)}</span>
+        <span style="font-size:12px;color:var(--text-muted);min-width:60px">${fmtPrice(item.price)}</span>
+        <button class="btn-qty" onclick="editItemQty(${idx}, -1)">−</button>
+        <input type="number" value="${item.qty}" min="0" class="item-qty-input" onchange="editItemQtySet(${idx}, this.value)" />
+        <button class="btn-qty" onclick="editItemQty(${idx}, 1)">+</button>
+        <input type="number" value="${item.price}" step="0.01" class="item-price-input" onchange="editItemPrice(${idx}, this.value)" />
+        <span style="font-weight:700;color:var(--accent);min-width:70px;text-align:right">${fmtPrice(item.price * item.qty)}</span>
+        <button class="btn-remove-item" onclick="editRemoveItem(${idx})">&times;</button>
+      </div>
+    `).join('')}
+    <div class="order-edit-total">
       Cəmi: ${fmtPrice(items.reduce((s, i) => s + i.price * i.qty, 0))}
     </div>
   `;
@@ -698,9 +657,8 @@ function editRemoveItem(idx) {
   renderOrderDetailItems();
 }
 
-// Save order changes
 domA.orderSaveChanges.addEventListener('click', async () => {
-  if (!adminState.editingOrderId) return;
+  if (!adminState.editingOrderId || !db) return;
   const total = adminState.editingOrderItems.reduce((s, i) => s + i.price * i.qty, 0);
   try {
     await db.collection('orders').doc(adminState.editingOrderId).update({
@@ -716,9 +674,8 @@ domA.orderSaveChanges.addEventListener('click', async () => {
   }
 });
 
-// Delete full order
 domA.orderDeleteFull.addEventListener('click', async () => {
-  if (!adminState.editingOrderId) return;
+  if (!adminState.editingOrderId || !db) return;
   if (!confirm('Sifarişi tamamilə silmək istəyirsiniz?')) return;
   try {
     await db.collection('orders').doc(adminState.editingOrderId).delete();
@@ -729,18 +686,15 @@ domA.orderDeleteFull.addEventListener('click', async () => {
   }
 });
 
-domA.orderDetailClose.addEventListener('click', () => {
-  domA.orderDetailModal.classList.add('hidden');
-});
-domA.orderDetailModal.querySelector('.modal-backdrop')?.addEventListener('click', () => {
-  domA.orderDetailModal.classList.add('hidden');
-});
+domA.orderDetailClose.addEventListener('click', () => domA.orderDetailModal.classList.add('hidden'));
+domA.orderDetailModal.querySelector('.modal-backdrop')?.addEventListener('click', () => domA.orderDetailModal.classList.add('hidden'));
 
 // ============================================
 // QUICK ORDER ACTIONS
 // ============================================
 
 async function deleteOrder(orderId) {
+  if (!db) return;
   if (!confirm('Sifarişi silmək istədiyinizə əminsiniz?')) return;
   try {
     await db.collection('orders').doc(orderId).delete();
@@ -762,7 +716,7 @@ function quickPrintOrder(orderId) {
     <html><head><title>Sifariş #${order.orderNumber}</title>
     <style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}
     td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f5}
-    h2{text-align:center}</style></head><body>
+    h2{text-align:center;color:#1d1d1f}</style></head><body>
     <h2>GASHAM - Sifariş #${order.orderNumber}</h2>
     <p>Tarix: ${fmtDate(date)} ${fmtTime(date)} | Status: ${order.status}</p>
     <table><thead><tr><th>Məhsul</th><th>Say</th><th>Qiymət</th><th>Cəm</th></tr></thead><tbody>${items}</tbody></table>
@@ -787,15 +741,16 @@ domA.ordersExportCsv?.addEventListener('click', () => {
 });
 
 domA.ordersExportExcel?.addEventListener('click', () => {
-  const headers = ['Sifariş #', 'Tarix', 'Saat', 'Məhsul Sayı', 'Cəmi', 'Status'];
-  const rows = adminState.orders.map(o => {
-    const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
-    return [o.orderNumber, fmtDate(d), fmtTime(d),
-      (o.items || []).reduce((s, i) => s + i.qty, 0),
-      (o.total || 0).toFixed(2), o.status || 'active'
-    ].join(',');
-  });
-  downloadCSV('\uFEFF' + [headers.join(','), ...rows].join('\n'), 'orders.xlsx');
+  downloadCSV('\uFEFF' + [
+    ['Sifariş #', 'Tarix', 'Saat', 'Məhsul Sayı', 'Cəmi', 'Status'].join(','),
+    ...adminState.orders.map(o => {
+      const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+      return [o.orderNumber, fmtDate(d), fmtTime(d),
+        (o.items || []).reduce((s, i) => s + i.qty, 0),
+        (o.total || 0).toFixed(2), o.status || 'active'
+      ].join(',');
+    })
+  ].join('\n'), 'orders.xlsx');
 });
 
 domA.ordersExportPdf?.addEventListener('click', () => {
@@ -810,15 +765,15 @@ domA.ordersExportPdf?.addEventListener('click', () => {
     <html><head><title>GASHAM - Sifarişlər</title>
     <style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}
     td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f7}
-    h2{text-align:center}</style></head><body>
+    h2{text-align:center;color:#1d1d1f}</style></head><body>
     <h2>GASHAM - Bütün Sifarişlər</h2>
-    <table><thead><tr><th>#</th><th>Tarix</th><td>Saat</td><th>Say</th><th>Cəmi</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>
-    <p style="text-align:right;margin-top:16px;color:#666">${new Date().toLocaleDateString('az-AZ')}</p></body></html>`);
+    <p style="text-align:right;color:#666">${new Date().toLocaleDateString('az-AZ')}</p>
+    <table><thead><tr><th>#</th><th>Tarix</th><td>Saat</td><th>Say</th><th>Cəmi</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
   win.document.close();
 });
 
 domA.ordersPrint?.addEventListener('click', () => {
-  const allOrders = adminState.orders.slice(0, 20);
+  const allOrders = adminState.orders.slice(0, 50);
   const rows = allOrders.map(o => {
     const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
     return `<tr><td>#${o.orderNumber}</td><td>${fmtDate(d)} ${fmtTime(d)}</td>
@@ -829,10 +784,11 @@ domA.ordersPrint?.addEventListener('click', () => {
   win.document.write(`
     <html><head><title>GASHAM - Çap</title>
     <style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}
-    td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f7}</style></head>
-    <body><h2 style="text-align:center">GASHAM - Sifarişlər</h2>
+    td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f7}
+    h2{text-align:center;color:#1d1d1f}</style></head>
+    <body><h2>GASHAM - Sifarişlər</h2>
     <table><thead><tr><th>#</th><th>Tarix</th><th>Say</th><th>Cəmi</th></tr></thead><tbody>${rows}</tbody></table>
-    <p style="text-align:right">${new Date().toLocaleDateString('az-AZ')}</p></body></html>`);
+    <p style="text-align:right;color:#666">${new Date().toLocaleDateString('az-AZ')}</p></body></html>`);
   win.document.close();
 });
 
@@ -868,12 +824,12 @@ function onAdminScanSuccess(decodedText) {
   const existing = adminState.products.find(p => (p.qrId || p.id) === qrId);
   if (existing) {
     editProduct(existing.id);
-    showAdminToast('Mövcud məhsul tapıldı', 'info');
+    showAdminToast('Mövcud məhsul tapıldı: ' + existing.name, 'info');
   } else {
     resetProductForm();
     domA.pfQrId.value = qrId;
     domA.pfName.focus();
-    showAdminToast('QR oxundu: ' + qrId.slice(0, 20), 'success');
+    showAdminToast('QR oxundu', 'success');
   }
   if (navigator.vibrate) navigator.vibrate(100);
 }
@@ -902,7 +858,6 @@ domA.adminFlashToggle.addEventListener('click', async () => {
 domA.adminCameraSwitch.addEventListener('click', async () => {
   stopAdminScanner();
   adminState.cameraId = adminState.cameraId === 'environment' ? 'user' : 'environment';
-  // Re-start with new camera
   try {
     adminState.scanner = new Html5Qrcode('admin-scanner-element');
     await adminState.scanner.start(
@@ -940,15 +895,17 @@ window.editRemoveItem = editRemoveItem;
 const savedTheme = localStorage.getItem('gasham-theme') || 'light';
 document.documentElement.setAttribute('data-theme', savedTheme);
 
-// Check auth
-if (checkAuth()) {
-  adminState.isLoggedIn = true;
-  domA.loading.classList.add('fade-out');
-  setTimeout(() => domA.loading.style.display = 'none', 600);
-  showAdminPanel();
-  initAdminData();
-} else {
-  domA.auth.style.display = 'flex';
-  domA.loading.classList.add('fade-out');
-  setTimeout(() => domA.loading.style.display = 'none', 600);
+function init() {
+  // Hide loading screen
+  setTimeout(() => {
+    domA.loading.classList.add('fade-out');
+    setTimeout(() => domA.loading.style.display = 'none', 600);
+  }, 400);
+
+  // Wait a brief moment for Firebase to init, then load data
+  setTimeout(() => {
+    initAdminData();
+  }, 800);
 }
+
+document.addEventListener('DOMContentLoaded', init);
