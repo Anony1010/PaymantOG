@@ -14,12 +14,34 @@ const firebaseConfig = {
 };
 
 let database = null;
+let currentUser = null;
 
 try {
   if (typeof firebase !== 'undefined') {
     firebase.initializeApp(firebaseConfig);
     database = firebase.database();
+
+    // Auto sign-in so database operations are authenticated
+    firebase.auth().signInWithEmailAndPassword('gasham@admin.com', 'gasham66')
+      .then(userCredential => {
+        currentUser = userCredential.user;
+        console.log('Firebase auth ok:', currentUser.email);
+      })
+      .catch(err => {
+        console.warn('Firebase auth error:', err.message);
+        // If user doesn't exist, create one
+        if (err.code === 'auth/user-not-found') {
+          firebase.auth().createUserWithEmailAndPassword('gasham@admin.com', 'gasham66')
+            .then(userCredential => {
+              currentUser = userCredential.user;
+              console.log('Firebase user created:', currentUser.email);
+            })
+            .catch(regErr => {
+              console.warn('User creation error:', regErr.message);
+            });
+        }
+      });
   }
 } catch (err) {
-  console.warn('Firebase yüklənmədi:', err.message);
+  console.warn('Firebase yuklenmedi:', err.message);
 }
