@@ -71,12 +71,15 @@ function showScanSuccess() {
 // THEME
 // ============================================
 
-$('theme-btn').addEventListener('click', () => {
-  const cur = document.documentElement.getAttribute('data-theme');
-  const next = cur === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('gasham-theme', next);
-});
+var themeBtn = $('theme-btn');
+if (themeBtn) {
+  themeBtn.addEventListener('click', function() {
+    var cur = document.documentElement.getAttribute('data-theme');
+    var next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('gasham-theme', next);
+  });
+}
 
 // ============================================
 // QR SCANNER
