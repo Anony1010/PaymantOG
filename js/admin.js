@@ -51,7 +51,6 @@
       clone.play().catch(function(){});
     } catch(e) {}
   }
-}
 
 function nowISO() { return new Date().toISOString(); }
 
