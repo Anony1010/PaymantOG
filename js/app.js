@@ -1,5 +1,5 @@
 /**
- * GASHAM - User Panel v5
+ * DAVUD - User Panel v5
  * Firebase Realtime Database - Auto-save orders on scan
  */
 
@@ -77,7 +77,7 @@ if (themeBtn) {
     var cur = document.documentElement.getAttribute('data-theme');
     var next = cur === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('gasham-theme', next);
+    localStorage.setItem('davud-theme', next);
   });
 }
 
@@ -515,7 +515,7 @@ if ('serviceWorker' in navigator) {
 // INIT
 // ============================================
 
-const savedTheme = localStorage.getItem('gasham-theme') || 'light';
+const savedTheme = localStorage.getItem('davud-theme') || 'light';
 document.documentElement.setAttribute('data-theme', savedTheme);
 
 subscribeRTDB();
